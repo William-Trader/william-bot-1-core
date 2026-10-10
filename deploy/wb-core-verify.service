@@ -1,0 +1,51 @@
+# systemd 单元 · 实盘验算报告（只交付文件，不安装）
+#
+# 部署到 101（由主控执行，本文件只交付）：
+#   sudo cp deploy/wb-core-verify.service deploy/wb-core-verify.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now wb-core-verify.timer
+#   systemctl list-timers wb-core-verify.timer
+#   手动跑一次：sudo systemctl start wb-core-verify.service && journalctl -u wb-core-verify -n 100 --no-pager
+#
+# 职责边界（重要）：
+#   本服务**只读**——读 data/state.json、读 OKX（fills-history / account/bills / positions），
+#   只写自己的一份 data/verify-YYYYMMDD.json。不下单、不改 state、不碰调度器。
+#   与 wb-core-scheduler.service（实盘下单）完全独立：跑在同一棵数据目录上，但只读。
+
+[Unit]
+Description=威廉机器人 1 号 · 实盘验算报告（只读：滑点/费用/盈亏 vs 回测）
+Documentation=file:/opt/wb-core/design/MARTIN-BOT-SPEC.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 凭据在 /root/.okx/config.toml（600 仅 root）→ 必须 root 才能读 OKX 成交/账单
+User=root
+WorkingDirectory=/opt/wb-core
+
+# ── 运行参数（与调度器同一批数据文件，口径必须一致）────────
+Environment=PROXY_URL=http://127.0.0.1:7890
+Environment=OKX_PROFILE=live
+Environment=MARTIN_DATA_DIR=/opt/wb-core/data
+Environment=MARTIN_STATE_PATH=/opt/wb-core/data/state.json
+
+# --live-okx：直连 OKX 取真实成交明细与账单（只读 GET）
+ExecStart=/usr/bin/node /opt/wb-core/scripts/verify-report.js --live-okx
+
+# 只读服务：失败不影响实盘，不做无限重启（定时器下一轮会再跑）
+Restart=no
+TimeoutStartSec=180
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=wb-core-verify
+
+# ── 安全加固：全盘只读，唯一可写路径是数据目录（写自己的 verify-*.json）──
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/opt/wb-core/data

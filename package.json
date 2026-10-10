@@ -1,0 +1,8 @@
+{
+  "name": "william-bot-1-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "威廉机器人 1 号 极简底座：OKX 拉数据 + OKX 下单（零依赖）",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "start:live": "LIVE=1 node server.js" }
+}

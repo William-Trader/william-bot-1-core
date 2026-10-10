@@ -1,0 +1,22 @@
+# systemd 定时器 · 每日 00:10 出验算报告（只交付文件，不安装）
+#
+# 部署（由主控执行）：
+#   sudo cp deploy/wb-core-verify.service deploy/wb-core-verify.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now wb-core-verify.timer
+#   systemctl list-timers wb-core-verify.timer
+#
+# 为什么 00:10：调度器 00:05 日结（dailySettle 写 dailyLog / 重置当日口径），
+# 验算报告要读「日结之后」的那份 state，否则当日盈亏与平仓笔数会跨日打架。
+
+[Unit]
+Description=威廉机器人 1 号 · 每日 00:10 实盘验算报告
+
+[Timer]
+OnCalendar=*-*-* 00:10:00
+Persistent=true
+# 单次跑几分钟内结束；避免与 00:05 日结抢 state 锁
+RandomizedDelaySec=120
+Unit=wb-core-verify.service
+
+[Install]
+WantedBy=timers.target

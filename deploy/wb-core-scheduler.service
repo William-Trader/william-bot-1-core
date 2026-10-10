@@ -1,0 +1,59 @@
+# systemd 单元 · 马丁调度器（B 方交付文件，不安装）
+#
+# 部署到 101（由主控执行，本文件只交付）：
+#   sudo cp deploy/wb-core-scheduler.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now wb-core-scheduler
+#   journalctl -u wb-core-scheduler -f
+#
+# 与既有 william-bot-1（:3100 面板/底座）互不干扰：
+#   调度器只写 data/{state,candidates,scheduler,control}.json，server.js 只读这些文件。
+#   state.json 的读改写通过 data/.state.lock 串行化（两进程共用同一把锁）。
+
+[Unit]
+Description=威廉机器人 1 号 · 马丁调度器（选品 5min / 篮子巡检 30s / 日结 00:05）
+Documentation=file:/opt/wb-core/design/MARTIN-BOT-SPEC.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 凭据在 /root/.okx/config.toml（600 仅 root），实盘时必须 root；dry-run 也是 root，保持一致
+User=root
+WorkingDirectory=/opt/wb-core
+
+# ── 运行参数 ────────────────────────────────────────────
+# 出网代理（OKX 必需）。101 上 mihomo 监听 127.0.0.1:7890
+Environment=PROXY_URL=http://127.0.0.1:7890
+Environment=OKX_PROFILE=live
+# 数据落盘目录（面板进程必须指向同一目录）
+Environment=MARTIN_DATA_DIR=/opt/wb-core/data
+# 自动开篮：默认关（人工在面板开；置 1 后调度器按候选池自动开纸面/实盘篮子）
+Environment=MARTIN_AUTO_OPEN=0
+# 纸面权益（dry-run 记账起点，USD）
+Environment=MARTIN_EQUITY=1000
+# ★ 实盘开关：0 = dry-run（不发任何订单）。改成 1 之前必须过回测门槛（期望值>0 且回撤<25%）
+Environment=LIVE=0
+
+ExecStart=/usr/bin/node /opt/wb-core/modules/scheduler.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# ── 日志（journal：journalctl -u wb-core-scheduler -f）──
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=wb-core-scheduler
+
+# ── 安全加固（不阻断读 /root/.okx 与写 /opt/wb-core/data）──
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/opt/wb-core/data
+
+[Install]
+WantedBy=multi-user.target

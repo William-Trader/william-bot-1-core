@@ -1,0 +1,98 @@
+/* ============================================================================
+ * tdesign-tokens.css —— 威廉马丁策略基站 · 设计令牌（唯一色值/尺寸来源）
+ * ----------------------------------------------------------------------------
+ * 用法：
+ *   <link rel="stylesheet" href="tdesign-tokens.css">   （先于 base.css 加载）
+ * 规则：
+ *   1. 全站组件 CSS 只允许引用 var(--ds-*)，禁止裸色值（本文件除外）；
+ *   2. 涨跌只允许使用 --ds-up / --ds-down；
+ *   3. 密度切换：给 <body> 加 data-density="compact" 即收紧间距/字号；
+ *      由 app.js 的 WB.prefs 自动维护。
+ * 命名：保留 --ds-* 前缀以向下兼容旧版页面。
+ * ========================================================================== */
+
+:root {
+  /* ---- 背景 4 级（页面 / 容器 / 悬停 / 侧栏） + 遮罩 + 内嵌 ---- */
+  --ds-bg-page: #181818;
+  --ds-bg-container: #242424;
+  --ds-bg-container-hover: #2b2b2b;
+  --ds-bg-sidebar: #1f1f1f;
+  --ds-bg-overlay: rgba(0, 0, 0, .6);
+  --ds-bg-inset: #1c1c1c;
+
+  /* ---- 文字 3 级 ---- */
+  --ds-text-primary: rgba(255, 255, 255, .92);
+  --ds-text-secondary: rgba(255, 255, 255, .62);
+  --ds-text-placeholder: rgba(255, 255, 255, .38);
+
+  /* ---- 品牌（TDesign 蓝）4 级 + focus 环 ---- */
+  --ds-brand-6: #054bbe;   /* 按下 */
+  --ds-brand-7: #2667d4;   /* 主色 */
+  --ds-brand-8: #4582e6;   /* 悬停 */
+  --ds-brand-9: #699ef5;   /* 深色底上的文字/图标配色 */
+  --ds-brand-focus: rgba(69, 130, 230, .35);
+
+  /* ---- 语义色：success / warning / danger 各 3 件（主色 / 浅底 / 边框） ---- */
+  --ds-success: #3dbf8e;
+  --ds-success-bg: rgba(61, 191, 142, .14);
+  --ds-success-bd: rgba(61, 191, 142, .4);
+
+  --ds-warning: #e6a23c;
+  --ds-warning-bg: rgba(230, 162, 60, .14);
+  --ds-warning-bd: rgba(230, 162, 60, .4);
+
+  --ds-danger: #e66a6a;
+  --ds-danger-bg: rgba(230, 106, 106, .16);
+  --ds-danger-bd: rgba(230, 106, 106, .45);
+
+  /* ---- 危急（爆仓 / 幽灵仓专用，配 wbPulse 呼吸动画） ---- */
+  --ds-critical: #f05252;
+
+  /* ---- 涨跌（允许裸用的唯二语义色） ---- */
+  --ds-up: #3dbf8e;
+  --ds-down: #e66a6a;
+
+  /* ---- 边框 2 级 ---- */
+  --ds-border-1: #333;
+  --ds-border-2: #3d3d3d;
+
+  /* ---- 圆角 4 级 ---- */
+  --ds-radius-s: 3px;
+  --ds-radius-m: 6px;
+  --ds-radius-l: 9px;
+  --ds-radius-xl: 12px;
+
+  /* ---- 间距 8 级 ---- */
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 20px;
+  --ds-space-6: 24px;
+  --ds-space-7: 28px;
+  --ds-space-8: 32px;
+
+  /* ---- 字号 6 级 ---- */
+  --ds-fs-xs: 12px;
+  --ds-fs-s: 14px;
+  --ds-fs-m: 16px;
+  --ds-fs-l: 20px;
+  --ds-fs-xl: 24px;
+  --ds-fs-xxl: 32px;
+
+  /* ---- 阴影 ---- */
+  --ds-shadow-pop: 0 8px 24px rgba(0, 0, 0, .45);
+
+  /* ---- z-index 3 级 ---- */
+  --ds-z-topbar: 800;
+  --ds-z-drawer: 900;
+  --ds-z-toast: 1000;
+}
+
+/* ---- 密度偏好：body[data-density="compact"] 收紧间距/字号 ---- */
+body[data-density="compact"] {
+  --ds-space-4: 12px;
+  --ds-space-5: 16px;
+  --ds-space-6: 20px;
+  --ds-fs-s: 13px;
+}

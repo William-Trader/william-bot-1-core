@@ -1,0 +1,21 @@
+# runtime data & backtest outputs — never shipped
+data/
+artifacts/
+*.bak-*
+*.log
+
+# secrets & credentials
+.env
+.env.*
+*.env
+state.json
+**/state.json
+*credential*
+*.pem
+*.key
+*.toml
+config.toml
+
+# dependencies & OS
+node_modules/
+.DS_Store

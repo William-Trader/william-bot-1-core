@@ -1,0 +1,32 @@
+
+/* ── 16. 可视化层（图表 + 风险距离条） ───────────────────────────────── */
+.ch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 1024px) { .ch-grid { grid-template-columns: 1fr; } }
+.ch-box { min-height: 220px; }
+.ch-box .uplot { margin: 0 auto; }
+.ch-empty { display: flex; align-items: center; justify-content: center; min-height: 180px; opacity: .45; font-size: 13px; }
+.ch-legend { display: flex; gap: 14px; font-size: 12px; opacity: .75; margin: 4px 0 6px; }
+.ch-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+.risk-row { display: grid; grid-template-columns: 132px 1fr 210px; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid color-mix(in srgb, #ffffff 5%, transparent); }
+.risk-name { font-weight: 600; font-size: 13px; }
+.risk-side { margin-left: 6px; font-size: 11px; opacity: .6; font-weight: 400; }
+.risk-bar { position: relative; height: 10px; border-radius: 6px; background: linear-gradient(90deg, color-mix(in srgb, #2ba471 22%, transparent), color-mix(in srgb, #e8b339 22%, transparent) 55%, color-mix(in srgb, #c64751 30%, transparent)); overflow: visible; }
+.risk-fill { position: absolute; inset: 0; border-radius: 6px; opacity: .25; background: currentColor; }
+.risk-stop { position: absolute; top: -3px; width: 2px; height: 16px; background: #c64751; box-shadow: 0 0 6px rgba(198,71,81,.8); }
+.risk-num { text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
+.risk-dist { display: block; opacity: .62; font-size: 11px; }
+.risk-num .up { color: #2ba471; } .risk-num .down { color: #c64751; }
+@media (max-width: 640px) { .risk-row { grid-template-columns: 1fr; gap: 5px; } .risk-num { text-align: left; } }
+
+/* ── 17. 风控仪表（进度条组） ─────────────────────────────────────────── */
+.g-row { display: grid; grid-template-columns: 110px 1fr 130px; gap: 10px; align-items: center; padding: 5px 0; font-size: 12px; }
+.g-lab { opacity: .85; }
+.g-bar { height: 8px; border-radius: 5px; background: color-mix(in srgb, #ffffff 8%, transparent); overflow: hidden; }
+.g-fill { height: 100%; border-radius: 5px; transition: width .3s ease; }
+.g-fill.is-ok { background: linear-gradient(90deg, #2ba471, #46c48a); }
+.g-fill.is-warn { background: linear-gradient(90deg, #dc7633, #e8b339); }
+.g-fill.is-danger { background: linear-gradient(90deg, #c64751, #e05a64); }
+.g-val { text-align: right; font-variant-numeric: tabular-nums; }
+.g-sep { margin: 8px 0 2px; font-size: 12px; opacity: .6; border-top: 1px solid color-mix(in srgb, #ffffff 6%, transparent); padding-top: 6px; }
+@media (max-width: 640px) { .g-row { grid-template-columns: 88px 1fr 96px; } }

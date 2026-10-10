@@ -1,0 +1,1738 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d429a'/%3E%3Ctext x='32' y='45' font-size='36' font-family='system-ui,sans-serif' text-anchor='middle' fill='%23ffffff'%3EW%3C/text%3E%3C/svg%3E">
+<title>威廉策略基站</title>
+<link rel="stylesheet" href="tdesign-tokens.css">
+<link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="wb-polish.css">
+<link rel="stylesheet" href="vendor/uplot.min.css">
+<style>
+/* ==========================================================================
+ * martin.html 局部样式 —— 只允许 var(--ds-*)，禁止裸色值
+ * ========================================================================== */
+
+/* hidden 属性优先级修复（.wb-badge 等类带 display，会盖掉 UA 的 hidden 规则） */
+[hidden] { display: none !important; }
+
+/* ---- 区块切换（hash 路由单页） ---- */
+.page-section { display: none; }
+.page-section.is-active { display: block; }
+.page-section > * + * { margin-top: var(--ds-space-4); }
+
+.sec-head { display: flex; align-items: center; gap: var(--ds-space-3); flex-wrap: wrap; }
+.sec-title { font-size: var(--ds-fs-l); font-weight: 700; }
+.sec-side { margin-left: auto; display: flex; align-items: center; gap: var(--ds-space-2); flex-wrap: wrap; }
+
+/* ---- 警示条 ---- */
+.wb-alert {
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-m);
+  border: 1px solid var(--ds-border-2);
+  font-size: var(--ds-fs-s);
+  color: var(--ds-text-secondary);
+}
+.wb-alert.is-warning { background: var(--ds-warning-bg); border-color: var(--ds-warning-bd); color: var(--ds-warning); }
+.wb-alert.is-danger  { background: var(--ds-danger-bg);  border-color: var(--ds-danger-bd);  color: var(--ds-danger); }
+
+/* ---- 卡片危险态（配合 wb-card 使用） ---- */
+.wb-card.is-warn { border-left: 3px solid var(--ds-warning); }
+.wb-card.is-danger { background: var(--ds-danger-bg); border-left: 4px solid var(--ds-danger); }
+.wb-card.is-critical {
+  border: 1px solid var(--ds-critical);
+  border-left: 4px solid var(--ds-critical);
+  animation: wbPulse 1.5s ease-in-out infinite;
+}
+.crit-text { color: var(--ds-critical); }
+
+/* ---- 键值指标网格（资金效率 / 回测 / 验算 headline 共用） ---- */
+.kv-grid { display: grid; gap: var(--ds-space-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.kv { min-width: 0; }
+.kv .kv-label { font-size: var(--ds-fs-xs); color: var(--ds-text-secondary); }
+.kv .kv-value {
+  font-size: var(--ds-fs-m); font-weight: 600;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+
+/* ---- 工具行 ---- */
+.toolbar {
+  display: flex; align-items: center; gap: var(--ds-space-3); flex-wrap: wrap;
+  font-size: var(--ds-fs-xs); color: var(--ds-text-secondary);
+}
+.toolbar .spacer { margin-left: auto; }
+
+/* ---- 篮子卡 ---- */
+.basket-head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-3); flex-wrap: wrap; }
+.basket-head .bh-left { display: flex; align-items: center; gap: var(--ds-space-2); flex-wrap: wrap; min-width: 0; }
+.basket-inst { font-size: var(--ds-fs-m); font-weight: 700; }
+.basket-head .bh-right { display: flex; align-items: center; gap: var(--ds-space-2); font-size: var(--ds-fs-xs); color: var(--ds-text-secondary); }
+.lvl-bar { width: 84px; height: 6px; background: var(--ds-bg-inset); border-radius: var(--ds-radius-s); overflow: hidden; }
+.lvl-bar > i { display: block; height: 100%; background: var(--ds-brand-8); }
+.basket-grid {
+  display: grid; gap: var(--ds-space-2) var(--ds-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  margin-top: var(--ds-space-2);
+}
+.bcell .b-label { font-size: var(--ds-fs-xs); color: var(--ds-text-secondary); }
+.bcell .b-value { font-size: var(--ds-fs-s); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.basket-foot {
+  display: flex; align-items: center; gap: var(--ds-space-2) var(--ds-space-4); flex-wrap: wrap;
+  margin-top: var(--ds-space-3); padding-top: var(--ds-space-2);
+  border-top: 1px solid var(--ds-border-1);
+  font-size: var(--ds-fs-xs); color: var(--ds-text-secondary);
+}
+.basket-foot .fp b { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---- 详情展开网格（候选池等） ---- */
+.detail-grid { display: flex; flex-wrap: wrap; gap: var(--ds-space-2) var(--ds-space-5); }
+.detail-item b { color: var(--ds-text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---- 折叠说明 ---- */
+.wb-details { font-size: var(--ds-fs-xs); color: var(--ds-text-secondary); }
+.wb-details > summary { cursor: pointer; color: var(--ds-text-secondary); padding: var(--ds-space-1) 0; }
+.wb-details > summary:hover { color: var(--ds-text-primary); }
+.wb-details .details-body { padding: var(--ds-space-2) 0 var(--ds-space-2) var(--ds-space-3); line-height: 1.7; }
+
+/* ---- 报告区块：左列表 + 右查看器 ---- */
+.rep-wrap { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: var(--ds-space-4); align-items: start; }
+.rep-list { display: flex; flex-direction: column; gap: var(--ds-space-1); max-height: 70vh; overflow-y: auto; }
+.rep-group-title {
+  font-size: var(--ds-fs-xs); color: var(--ds-text-placeholder);
+  padding: var(--ds-space-2) var(--ds-space-2) 0; letter-spacing: 1px;
+}
+.rep-item {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--ds-space-2); border-radius: var(--ds-radius-m);
+  cursor: pointer; border: 1px solid transparent;
+}
+.rep-item:hover { background: var(--ds-bg-container-hover); }
+.rep-item.is-active { background: var(--ds-bg-container-hover); border-color: var(--ds-brand-8); }
+.rep-item .rep-name { font-size: var(--ds-fs-s); font-weight: 600; overflow-wrap: anywhere; }
+.rep-item .rep-meta { font-size: var(--ds-fs-xs); color: var(--ds-text-placeholder); font-variant-numeric: tabular-nums; }
+.rep-viewer { min-height: 300px; }
+.md-view { font-family: ui-monospace, "SF Mono", Consolas, "Courier New", monospace; font-size: var(--ds-fs-xs); line-height: 1.7; overflow-x: auto; }
+.md-view .md-line { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1em; }
+.md-view .md-h { font-weight: 700; color: var(--ds-brand-9); margin-top: var(--ds-space-3); }
+.md-view .md-h1 { font-size: var(--ds-fs-m); }
+.md-view .md-h2 { font-size: var(--ds-fs-s); }
+.md-view .md-code {
+  background: var(--ds-bg-inset); border: 1px solid var(--ds-border-1);
+  border-radius: var(--ds-radius-m); padding: var(--ds-space-2) var(--ds-space-3);
+  margin: var(--ds-space-2) 0; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* ---- 日志时间线 ---- */
+.log-box {
+  max-height: 62vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--ds-space-2);
+  padding-right: var(--ds-space-2);
+}
+.log-item { display: flex; align-items: baseline; gap: var(--ds-space-2); font-size: var(--ds-fs-s); }
+.log-item .log-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.log-item .wb-fresh { flex-shrink: 0; }
+
+/* ---- 参数区块：左锚点 + 右字段组 + sticky 底条 ---- */
+.policy-wrap { display: grid; grid-template-columns: 180px 1fr; gap: var(--ds-space-4); align-items: start; }
+.policy-nav { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 2px; }
+.policy-nav a {
+  display: block; padding: var(--ds-space-1) var(--ds-space-2);
+  border-radius: var(--ds-radius-m); font-size: var(--ds-fs-s);
+  color: var(--ds-text-secondary);
+}
+.policy-nav a:hover { background: var(--ds-bg-container-hover); color: var(--ds-text-primary); }
+.policy-nav a.is-active { color: var(--ds-brand-9); font-weight: 600; box-shadow: inset 2px 0 0 var(--ds-brand-8); }
+.preset-bar { display: flex; align-items: center; gap: var(--ds-space-2); flex-wrap: wrap; }
+.preset-bar .preset-label { font-size: var(--ds-fs-xs); color: var(--ds-text-secondary); }
+.policy-bar {
+  position: sticky; bottom: var(--ds-space-3); z-index: 10;
+  display: flex; align-items: center; gap: var(--ds-space-3); flex-wrap: wrap;
+  background: var(--ds-bg-container);
+  border: 1px solid var(--ds-border-2); border-radius: var(--ds-radius-l);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  box-shadow: var(--ds-shadow-pop);
+}
+.policy-bar .dirty-count { font-size: var(--ds-fs-s); color: var(--ds-text-secondary); font-variant-numeric: tabular-nums; }
+.policy-bar .bar-actions { margin-left: auto; display: flex; gap: var(--ds-space-2); }
+.field-warn { margin-left: var(--ds-space-1); }
+.msg-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding-left: var(--ds-space-4); }
+.msg-list li { font-size: var(--ds-fs-xs); }
+
+/* ---- 响应式 ---- */
+@media (max-width: 1024px) {
+  .rep-wrap { grid-template-columns: 1fr; }
+  .rep-list { max-height: 240px; }
+  .policy-wrap { grid-template-columns: 1fr; }
+  .policy-nav { position: static; flex-direction: row; flex-wrap: wrap; gap: var(--ds-space-1); }
+}
+@media (max-width: 390px) {
+  .sec-title { font-size: var(--ds-fs-m); }
+  .basket-grid { grid-template-columns: repeat(2, 1fr); }
+  .kv-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d429a'/%3E%3Ctext x='32' y='45' font-size='36' fill='%23fff' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+</head>
+<body data-page="martin">
+<div id="shell"></div>
+<main id="page" class="page">
+
+  <!-- 1. 概览 -->
+  <section class="page-section" id="sec-overview" data-key="overview">
+    <div class="sec-head"><span class="sec-title">📈 概览</span><span class="sec-side" id="ov-side"></span></div>
+    <div class="wb-stat-grid" id="ov-stats">
+      <div class="wb-skel wb-skel-card"></div><div class="wb-skel wb-skel-card"></div>
+      <div class="wb-skel wb-skel-card"></div><div class="wb-skel wb-skel-card"></div>
+      <div class="wb-skel wb-skel-card"></div><div class="wb-skel wb-skel-card"></div>
+    </div>
+    <div class="wb-card">
+      <div class="card-head"><span class="card-title">资金效率</span>
+        <button class="wb-btn is-small wb-ghost" id="eff-info-btn" aria-label="资金效率说明">说明</button></div>
+      <div class="kv-grid" id="ov-eff"><div class="wb-skel"></div></div>
+      <details class="wb-details" id="eff-info" hidden>
+        <div class="details-body">占用率 = 已占用保证金 / 账户权益；满层占用上限为所有篮子全部加满层时的保证金占用比例（来自参数 meta）；单层名义预算 = 账户权益 × 首单保证金% × 杠杆。</div>
+      </details>
+    </div>
+    <div class="wb-card">
+      <div class="card-head"><span class="card-title">系统状态</span>
+        <button class="wb-btn is-small" id="ov-health-btn" aria-label="重新健康检查">健康检查</button></div>
+      <div id="ov-sys"><div class="wb-skel"></div></div>
+    </div>
+    <div class="wb-card">
+      <div class="card-head"><span class="card-title">回测门槛</span>
+        <span class="sec-side">
+          <button class="wb-btn is-small" id="bt-refresh" aria-label="刷新回测摘要">刷新</button>
+          <button class="wb-btn is-small is-primary" id="bt-run" aria-label="后台触发回测">触发回测（后台）</button>
+        </span></div>
+      <div id="ov-bt"><div class="wb-skel"></div></div>
+    </div>
+  </section>
+
+
+  <!-- 可视化：权益曲线 / 每笔盈亏 / 篮子风险距离（只读） -->
+  <div class="wb-card" id="ch-card">
+    <div class="card-head"><span class="card-title">📈 可视化</span><span class="ds-card-note">只读 · 15s 刷新</span></div>
+    <div class="ch-grid">
+      <div class="ch-box"><div class="ch-legend"><span><i style="background:#4582e6"></i>账户权益</span></div><div id="ch-equity"></div></div>
+      <div class="ch-box"><div class="ch-legend"><span><i style="background:#2ba471"></i>盈利笔</span><span><i style="background:#c64751"></i>亏损笔</span><span><i style="background:#e8b339"></i>累计盈亏</span></div><div id="ch-pnl"></div></div>
+    </div>
+      <div class="ch-box"><div class="ch-legend"><span><i style="background:#2ba471"></i>盈利日</span><span><i style="background:#c64751"></i>亏损日</span></div><div id="ch-daily"></div></div>
+    <div style="margin-top:10px"><div class="card-title" style="font-size:13px;margin-bottom:6px">篮子风险距离（现价 → 止损 → 爆仓）</div><div id="ch-risk"></div></div>
+  </div>
+
+  <!-- 2. 篮子 -->
+  <section class="page-section" id="sec-baskets" data-key="baskets">
+    <div class="sec-head"><span class="sec-title">🧺 篮子</span><span class="sec-side" id="bk-side"></span></div>
+    <div id="bk-alert" hidden></div>
+    <div id="bk-list"><div class="wb-skel wb-skel-card"></div><div class="wb-skel wb-skel-card"></div></div>
+    <div class="wb-card">
+      <div class="card-head"><span class="card-title">已平仓（最近 20）</span></div>
+      <div id="bk-history"><div class="wb-skel"></div></div>
+    </div>
+
+  <div class="wb-card" style="margin-top:12px">
+    <div class="card-head"><span class="card-title">🛡️ 风控仪表</span><span class="ds-card-note">占用 / 日亏 / 最近风险</span></div>
+    <div id="ch-gauge"></div>
+  </div>
+  </section>
+
+  <!-- 3. 候选池 -->
+  <section class="page-section" id="sec-candidates" data-key="candidates">
+    <div class="sec-head"><span class="sec-title">🎯 候选池</span>
+      <span class="sec-side"><button class="wb-btn is-small is-primary" id="cd-screen-btn" aria-label="立即重跑选品">立即选品</button></span></div>
+    <div class="toolbar" id="cd-toolbar"><div class="wb-skel" style="width:60%"></div></div>
+    <div id="cd-table"><div class="wb-skel wb-skel-card"></div></div>
+    <div id="cd-foot"></div>
+  </section>
+
+  <!-- 4. 收益 -->
+  <section class="page-section" id="sec-pnl" data-key="pnl">
+    <div class="sec-head"><span class="sec-title">💰 收益 / 资金效率</span></div>
+    <div class="wb-card">
+      <div class="card-head"><span class="card-title">资金效率</span></div>
+      <div class="kv-grid" id="pnl-eff"><div class="wb-skel"></div></div>
+    </div>
+    <div class="wb-card">
+      <div class="card-head"><span class="card-title">日结记录</span></div>
+      <div id="pnl-daily"><div class="wb-skel"></div></div>
+    </div>
+  </section>
+
+  <!-- 5. 验算 -->
+  <section class="page-section" id="sec-verify" data-key="verify">
+    <div class="sec-head"><span class="sec-title">🔍 验算（实盘 vs 回测）</span>
+      <span class="sec-side"><button class="wb-btn is-small" id="vf-refresh" aria-label="刷新验算报告">刷新</button></span></div>
+    <div id="vf-body"><div class="wb-skel wb-skel-card"></div></div>
+  </section>
+
+  <!-- 6. 报告 -->
+  <section class="page-section" id="sec-report" data-key="report">
+    <div class="sec-head"><span class="sec-title">📄 报告</span>
+      <span class="sec-side"><button class="wb-btn is-small" id="rp-refresh" aria-label="刷新报告列表">刷新</button></span></div>
+    <div class="rep-wrap">
+      <div class="wb-card"><div class="card-head"><span class="card-title">报告列表</span></div>
+        <div class="rep-list" id="rp-list"><div class="wb-skel"></div><div class="wb-skel"></div></div></div>
+      <div class="wb-card rep-viewer"><div class="card-head"><span class="card-title" id="rp-viewer-title">查看器</span></div>
+        <div id="rp-viewer"><div class="wb-empty"><div class="empty-emoji">📄</div><div class="empty-text">从左侧选择一份报告</div></div></div></div>
+    </div>
+  </section>
+
+  <!-- 7. 日志 -->
+  <section class="page-section" id="sec-log" data-key="log">
+    <div class="sec-head"><span class="sec-title">🧾 日志</span>
+      <span class="sec-side">
+        <label class="tiny muted"><input type="checkbox" id="log-autoscroll" checked> 自动滚动</label>
+      </span></div>
+    <div class="wb-card"><div class="log-box" id="log-box"><div class="wb-skel"></div></div></div>
+  </section>
+
+  <!-- 8. 参数 -->
+  <section class="page-section" id="sec-policy" data-key="policy">
+    <div class="sec-head"><span class="sec-title">⚙️ 参数</span><span class="sec-side" id="pl-side"></span></div>
+    <div id="pl-body"><div class="wb-skel wb-skel-card"></div><div class="wb-skel wb-skel-card"></div></div>
+  </section>
+
+</main>
+<script src="app.js"></script>
+<script>
+/* ==========================================================================
+ * martin.html 本页逻辑 —— 策略基站主面板（8 内容区块 + 2 外链）
+ * 依赖 app.js 提供的 WB：shell/api/poll/fmt/freshHTML/badge/empty/toast/
+ * confirm/drawer/priceAxis/prefs/esc。全部字段访问防御式，缺字段降级 "--"。
+ * ========================================================================== */
+(function () {
+
+  /* 今日盈亏：优先后端「交易所口径」（已实现+费+资金费+未实现；入金不算盈亏），否则回落 权益−权益起点。
+     ⚠️ 必须定义在顶层作用域：renderStats 与 renderOverview 两处都会调用。 */
+  function dayPnlOf(st) {
+    if (st && typeof st.todayPnlUsd === 'number' && st.todayPnlSource === 'okx.bills+tradepnl') return st.todayPnlUsd;
+    var e = Number(st && st.equity) || 0, d = Number(st && st.dayStartEquity) || 0;
+    return (e && d) ? (e - d) : NaN;
+  }
+'use strict';
+
+var esc = WB.esc, fmt = WB.fmt, badge = WB.badge, fresh = WB.freshHTML;
+
+/* ---------------- 防御式小工具 ---------------- */
+
+/** 严格转数：null/undefined/'' 视为缺失 */
+function num(v) { return (v === null || v === undefined || v === '') ? NaN : Number(v); }
+function ok(v) { return isFinite(num(v)); }
+/** 数字或 '--' */
+function val(v, d) { var n = num(v); return isFinite(n) ? fmt.num(n, d === undefined ? 2 : d) : '--'; }
+/** 美元或 '--' */
+function usd(v) { var n = num(v); return isFinite(n) ? fmt.usd(n) : '--'; }
+/** 百分数（输入已是百分数）或 '--' */
+function pct(v, d) { var n = num(v); return isFinite(n) ? fmt.pct(n, d === undefined ? 2 : d) : '--'; }
+/** 带符号数字（用于盈亏） */
+function signed(v, d) {
+  var n = num(v);
+  if (!isFinite(n)) return '--';
+  return (n > 0 ? '+' : '') + fmt.num(n, d === undefined ? 2 : d);
+}
+/** 涨跌色 class */
+function updown(v) { var n = num(v); return !isFinite(n) || n === 0 ? '' : (n > 0 ? 'up' : 'down'); }
+/** 大额缩写：1.96亿→195.9M，12.3亿→1.23B */
+function compactUsd(v) {
+  var n = num(v);
+  if (!isFinite(n)) return '--';
+  var a = Math.abs(n);
+  if (a >= 1e9) return fmt.num(n / 1e9, 2) + 'B';
+  if (a >= 1e6) return fmt.num(n / 1e6, 1) + 'M';
+  if (a >= 1e3) return fmt.num(n / 1e3, 1) + 'K';
+  return fmt.num(n, 2);
+}
+/** 毫秒间隔 → 可读文本（"5 分钟"/"30s"） */
+function durMs(ms) {
+  var n = num(ms);
+  if (!isFinite(n)) return '--';
+  var s = Math.round(n / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.round(s / 60) + ' 分钟';
+  return (s / 3600).toFixed(1) + ' 小时';
+}
+/** 卡片错误态 */
+function errBox(msg) {
+  return '<div class="wb-alert is-danger">⛔ 加载失败：' + esc(msg || '未知错误') + '（下轮自动重试）</div>';
+}
+/** 骨架 */
+function skelCards(n) {
+  var s = '';
+  for (var i = 0; i < n; i++) s += '<div class="wb-skel wb-skel-card"></div>';
+  return s;
+}
+/** 报错只 toast 一次（避免轮询刷爆） */
+var toastOnceFlags = {};
+function toastOnce(key, msg, type) {
+  if (toastOnceFlags[key]) return;
+  toastOnceFlags[key] = true;
+  WB.toast(msg, type || 'error');
+}
+function toastReset(key) { delete toastOnceFlags[key]; }
+
+/* ---------------- 全局缓存 ---------------- */
+
+var S = {
+  state: null,        // /api/martin/state
+  baskets: null,      // /api/martin/baskets
+  candidates: null,   // /api/martin/candidates
+  backtest: null,     // /api/martin/backtest
+  health: null,       // /api/health
+  policy: null,       // /api/martin/policy-schema
+  reports: null,      // /api/reports
+  verify: null,       // /api/verify/report
+};
+var activeSection = 'overview';
+var sectionPollers = {};  // key -> stop()
+
+/* ---------------- 顶栏 / 壳 ---------------- */
+
+/** 从 state 里防御式找止盈单方式（market/limit），找不到返回 null */
+function tpOrderType(st) {
+  if (!st || typeof st !== 'object') return null;
+  var v = st.takeProfitOrderType || st.tpOrderType || st.tpOrder ||
+          (st.tpStats && (st.tpStats.orderType || st.tpStats.type)) || null;
+  if (v === 'market' || v === 'limit') return v;
+  return null;
+}
+
+/** 从 state 里防御式找熔断字段 */
+function breakerInfo(st) {
+  if (!st || typeof st !== 'object') return null;
+  var b = st.circuitBreaker || st.breaker || st.fuse || st.halt || st.circuit || null;
+  if (!b) return null;
+  if (typeof b === 'boolean') return { triggered: b };
+  if (typeof b === 'object') return b;
+  return null;
+}
+
+/** 外部服务单元（state 缺字段则 null） */
+function externalServices(st) {
+  if (!st || typeof st !== 'object') return null;
+  return st.externalServices || st.services || st.units || null;
+}
+
+/** 顶栏生命体征 + 模式 + 徽标 + 侧栏底 */
+function renderTopbar(st) {
+  var sch = (st && st.scheduler) || {};
+  var eq = num(st && st.equity), ds = num(st && st.dayStartEquity);
+var dayPnl = dayPnlOf(st);
+
+  // 心跳：优先 lastTick，其次 state.ts；阈值取 staleAfterSec（缺省 180）
+  var staleAfter = num(sch.staleAfterSec);
+  if (!isFinite(staleAfter) || staleAfter <= 0) staleAfter = 180;
+  var hbTs = ok(sch.lastTick) ? num(sch.lastTick) : (ok(st && st.ts) ? num(st.ts) : NaN);
+  var hbHtml = (sch.stale === true)
+    ? '<span class="wb-fresh is-crit"><i class="fresh-dot"></i>心跳停滞</span>'
+    : fresh(hbTs, { warn: Math.max(30, staleAfter / 2), crit: staleAfter });
+
+  WB.shell.setVitals([
+    { label: '权益', value: '<span class="num">' + esc(usd(eq)) + '</span>' },
+    { label: '今日盈亏', value: '<span class="num">' + esc(signed(dayPnl) + (isFinite(dayPnl) ? ' U' : '')) + '</span>', cls: updown(dayPnl) },
+    { label: '心跳', value: hbHtml },
+  ]);
+
+  // 模式角标 + 横幅
+  var mode = (st && st.mode) === 'live' ? 'live' : 'dry-run';
+  var bannerText = (st && st.safeBanner) ||
+    (mode === 'live' ? '★ 实盘模式：开篮/平仓会发送真实订单' : '★ dry-run：只预览不发单');
+  if (mode === 'live' && bannerText.indexOf('★') !== 0) bannerText = '★ ' + bannerText;
+  WB.shell.setMode(mode, bannerText);
+
+  // 止盈单方式徽标（有则显示，无则隐藏）——追加在 #tb-mode 的模式角标后
+  var tp = tpOrderType(st);
+  if (tp) {
+    var modeSlot = document.getElementById('tb-mode');
+    if (modeSlot) modeSlot.insertAdjacentHTML('beforeend', ' ' + badge('止盈单 ' + tp.toUpperCase(), 'brand'));
+  }
+
+  // 侧栏篮子徽标 + 底部状态
+  WB.shell.setNavBadge('nav-baskets-count', ok(st && st.openBaskets) ? num(st.openBaskets) : null);
+  var c = (st && st.candidates) || {};
+  WB.shell.setSidebarFoot(
+    '候选池 <b class="num">' + esc(ok(c.count) ? fmt.num(num(c.count), 0) : '--') + '</b> 个<br>' +
+    (ok(c.updatedAt) ? fresh(c.updatedAt, { warn: 600, crit: 1800 }) : '<span class="tiny">龄期 --</span>')
+  );
+
+  // 暂停/恢复按钮文案
+  var pauseBtn = document.getElementById('tb-btn-pause');
+  if (pauseBtn) {
+    var txt = pauseBtn.querySelector('.btn-text-optional');
+    var running = sch.running !== false;
+    if (txt) txt.textContent = running ? '暂停调度' : '恢复调度';
+    pauseBtn.setAttribute('aria-label', running ? '暂停调度（二次确认）' : '恢复调度（二次确认）');
+  }
+}
+
+/* ---------------- 全局 state 轮询 ---------------- */
+
+async function loadState() {
+  try {
+    var st = await WB.api.get('/api/martin/state');
+    S.state = st;
+    if (typeof renderEfficiencyInto === 'function') { renderEfficiencyInto('ov-eff'); if (document.getElementById('pnl-eff')) renderEfficiencyInto('pnl-eff'); }
+    toastReset('state');
+    renderTopbar(st);
+    if (activeSection === 'overview') renderOverview(st);
+    if (activeSection === 'log') renderLogs(st);
+    if (activeSection === 'pnl') renderPnlDaily(st);
+  } catch (e) {
+    // 先把真实异常打出来（原来的提示把内部 JS 错误误报成"网络错误"，掩盖了真因）
+    try { console.error('[loadState] 真实错误:', (e && (e.stack || e.message)) || e, e); } catch (e2) {}
+    toastOnce('state', '全局状态加载失败：' + (e && (e.error || e.message) || '未知错误'));
+    var slot = document.getElementById('tb-vitals');
+    if (slot && !S.state) slot.innerHTML = '<span class="tb-vital"><span class="v-value down">状态不可用</span></span>';
+  }
+}
+
+/** 暂停 / 恢复调度（二次确认 + try/catch） */
+async function onPause() {
+  var sch = (S.state && S.state.scheduler) || {};
+  var running = sch.running !== false;
+  var yes = await WB.confirm(
+    running ? '暂停调度？' : '恢复调度？',
+    running ? '暂停后不再巡检篮子与选品；在仓篮子不会被自动止盈止损，请确认。'
+            : '恢复后调度器将继续 30s 巡检 / 定时选品。');
+  if (!yes) return;
+  try {
+    await WB.api.post(running ? '/api/martin/pause' : '/api/martin/resume');
+    WB.toast(running ? '调度已暂停' : '调度已恢复', 'success');
+  } catch (e) {
+    WB.toast('操作失败：' + (e && e.error || '网络错误'), 'error');
+  }
+  loadState();
+}
+
+/** 刷新：全量重拉（state + 当前区块） */
+function onRefresh() {
+  loadState();
+  var sec = SECTIONS[activeSection];
+  if (sec && sec.reload) sec.reload();
+  WB.toast('已刷新', 'info', 1500);
+}
+
+/** 系统抽屉 */
+function onSystem() {
+  var st = S.state || {};
+  var sch = st.scheduler || {};
+  var eng = st.engine || {};
+  var iv = sch.intervals || {};
+  var tp = tpOrderType(st);
+  var svc = externalServices(st);
+
+  function row(k, v) {
+    return '<tr><td class="muted">' + esc(k) + '</td><td>' + v + '</td></tr>';
+  }
+  var engLine = eng.source
+    ? badge(eng.source === 'real' ? '真件' : '桩', eng.source === 'real' ? 'success' : 'warning') +
+      ' <span class="tiny muted">real:[' + esc((eng.real || []).join(', ') || '--') + '] stub:[' + esc((eng.stub || []).join(', ') || '--') + ']</span>'
+    : '--';
+
+  var html = '<table class="wb-table"><tbody>' +
+    row('止盈单方式', tp ? badge(tp.toUpperCase(), 'brand') : '--') +
+    row('引擎来源', engLine) +
+    row('调度间隔', '选品 ' + esc(durMs(iv.screenMs)) + ' · 巡检 ' + esc(durMs(iv.basketMs)) + ' · 日结 ' + esc(iv.daily || '--')) +
+    row('上次 tick', ok(sch.lastTick) ? '<span class="num">' + esc(fmt.time(sch.lastTick)) + '</span> ' + fresh(sch.lastTick, { warn: 90, crit: num(sch.staleAfterSec) || 180 }) : '--') +
+    row('上次选品', ok(sch.lastScreenAt) ? '<span class="num">' + esc(fmt.time(sch.lastScreenAt)) + '</span> ' + fresh(sch.lastScreenAt, { warn: 600, crit: 1800 }) : '--') +
+    row('上次巡检', ok(sch.lastBasketTickAt) ? '<span class="num">' + esc(fmt.time(sch.lastBasketTickAt)) + '</span> ' + fresh(sch.lastBasketTickAt, { warn: 90, crit: 300 }) : '--') +
+    row('上次日结', ok(sch.lastDailyAt) ? '<span class="num">' + esc(fmt.time(sch.lastDailyAt)) + '</span>' : '--') +
+    row('外部服务单元', svc ? esc(typeof svc === 'string' ? svc : JSON.stringify(svc)) : '--') +
+    row('健康检查', '<span id="sys-health" class="tiny muted">检查中…</span>') +
+    '</tbody></table>';
+  WB.drawer.open('系统状态', html);
+
+  WB.api.get('/api/health').then(function (h) {
+    var el = document.getElementById('sys-health');
+    if (el) el.innerHTML = badge('OK', 'success') + ' <span class="tiny muted num">' +
+      esc(h && h.uptimeSec !== undefined ? 'uptime ' + fmt.num(h.uptimeSec, 0) + 's' : '') + '</span>';
+    S.health = h;
+  }).catch(function (e) {
+    var el = document.getElementById('sys-health');
+    if (el) el.innerHTML = badge('异常', 'danger') + ' <span class="tiny muted">' + esc(e && e.error || '') + '</span>';
+  });
+}
+
+/* ==================== 1. 概览 overview ==================== */
+
+/** 状态卡骨架 */
+function statCard(label, valueHtml, subHtml, cls, actionHtml) {
+  return '<div class="wb-stat ' + (cls || '') + '">' +
+    '<div class="stat-label">' + label + '</div>' +
+    '<div class="stat-value">' + valueHtml + '</div>' +
+    (subHtml ? '<div class="stat-sub">' + subHtml + '</div>' : '') +
+    (actionHtml ? '<div class="stat-action">' + actionHtml + '</div>' : '') +
+    '</div>';
+}
+
+/** 资金效率 6 指标（能算则算，算不了 "--"） */
+function computeEfficiency() {
+  var st = S.state || {};
+  var bt = S.baskets || {};
+  var eq = num(st.equity);
+  var mu = bt.totals ? num(bt.totals.marginUsed) : NaN;
+  var free = (isFinite(eq) && isFinite(mu)) ? eq - mu : NaN;
+  var occ = (isFinite(eq) && eq > 0 && isFinite(mu)) ? mu / eq * 100 : NaN;
+  var meta = (S.policy && S.policy.meta) || {};
+  var cur = (S.policy && S.policy.current) || {};
+  var full = num(meta.fullOccupancyPct);
+  var single = NaN;
+  if (isFinite(eq) && ok(cur.firstMarginPct) && ok(cur.leverage)) {
+    single = eq * num(cur.firstMarginPct) / 100 * num(cur.leverage);
+  }
+  return [
+    { k: '账户权益', v: usd(eq) },
+    { k: '已占用保证金', v: usd(mu) },
+    { k: '闲置可用', v: usd(free) },
+    { k: '实际占用率', v: pct(occ) },
+    { k: '满层占用上限', v: pct(full) },
+    { k: '单层名义预算', v: usd(single) },
+  ];
+}
+
+function renderEfficiencyInto(elId) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = computeEfficiency().map(function (m) {
+    return '<div class="kv"><div class="kv-label">' + esc(m.k) + '</div>' +
+      '<div class="kv-value">' + esc(m.v) + '</div></div>';
+  }).join('');
+}
+
+/** 概览 6 状态卡 + 资金效率 + 系统状态表 */
+function renderOverview(st) {
+  var sch = st.scheduler || {};
+  var eng = st.engine || {};
+  var cand = st.candidates || {};
+  var eq = num(st.equity), ds = num(st.dayStartEquity);
+  var dayPnl = dayPnlOf(st);
+  var staleAfter = num(sch.staleAfterSec);
+  if (!isFinite(staleAfter) || staleAfter <= 0) staleAfter = 180;
+
+  /* 卡 1 今日盈亏 */
+  var c1 = statCard('今日盈亏',
+    '<span class="' + updown(dayPnl) + '">' + esc(signed(dayPnl) + (isFinite(dayPnl) ? ' U' : '')) + '</span>',
+    '账户权益 ' + esc(usd(eq)) + '<br>权益起点 ' + esc(usd(ds)));
+
+  /* 卡 2 熔断状态（无熔断字段 → 正常/未触发 + 确认解除按钮） */
+  var brk = breakerInfo(st);
+  var brkTripped = brk && (brk.triggered === true || brk.tripped === true || brk.active === true);
+  var c2 = statCard('熔断状态',
+    brkTripped ? '已触发' : '正常',
+    (brkTripped ? '⚠ ' + esc(brk.reason || brk.message || '已触发，需人工确认解除')
+                : (brk ? esc(brk.reason || '未触发') : '未触发')),
+    brkTripped ? 'is-danger' : '',
+    '<button class="wb-btn is-small" id="ov-breaker-clear" aria-label="确认解除熔断">确认解除</button>');
+
+  /* 卡 3 下单闸门 */
+  var lor = sch.lastOrderResult || null;
+  var lorBadges = '';
+  if (lor) {
+    if (lor.ok === true) lorBadges += badge('ok', 'success') + ' ';
+    else if (lor.ok === false) lorBadges += badge('失败', 'danger') + ' ';
+    if (lor.sent === true) lorBadges += badge('已发单', 'brand') + ' ';
+    if (lor.dryRun === true) lorBadges += badge('dry-run', 'warning');
+  }
+  var c3 = statCard('下单闸门',
+    '<span class="num">' + esc(ok(sch.orderRequests) ? fmt.num(num(sch.orderRequests), 0) : '--') + '</span> <span class="tiny muted">次请求</span>',
+    (lorBadges ? lorBadges + '<br>' : '') + '最近发单 ' + esc(lor && ok(lor.ts) ? fmt.time(lor.ts) : (lor && ok(lor.at) ? fmt.time(lor.at) : '--')));
+
+  /* 卡 4 引擎来源 */
+  var engReal = eng.source === 'real';
+  var c4 = statCard('引擎来源',
+    eng.source ? badge(engReal ? '真件' : '桩', engReal ? 'success' : 'warning') : '--',
+    'real [' + esc((eng.real || []).join(', ') || '--') + ']<br>stub [' + esc((eng.stub || []).join(', ') || '--') + ']',
+    eng.source && !engReal ? 'is-warn' : '');
+
+  /* 卡 5 候选池 */
+  var c5 = statCard('候选池',
+    '<span class="num">' + esc(ok(cand.count) ? fmt.num(num(cand.count), 0) : '--') + '</span> <span class="tiny muted">个品种</span>',
+    ok(cand.updatedAt) ? fresh(cand.updatedAt, { warn: 600, crit: 1800 }) : '龄期 --');
+
+  /* 卡 6 调度器 */
+  var running = sch.running !== false;
+  var nextScreen = (ok(sch.lastScreenAt) && ok(sch.intervals && sch.intervals.screenMs))
+    ? Math.max(0, Math.round((num(sch.lastScreenAt) + num(sch.intervals.screenMs) - Date.now()) / 1000)) : NaN;
+  var c6 = statCard('调度器',
+    running ? badge('运行中', 'success') : badge('已暂停', 'warning'),
+    '下一轮选品 ' + (isFinite(nextScreen) ? '<span class="num">' + nextScreen + 's</span>' : '--') + '<br>' +
+    '心跳 ' + (ok(sch.lastTick) ? fresh(sch.lastTick, { warn: Math.max(30, staleAfter / 2), crit: staleAfter }) : '--'),
+    running ? '' : 'is-warn');
+
+  document.getElementById('ov-stats').innerHTML = c1 + c2 + c3 + c4 + c5 + c6;
+
+  /* 侧信息：日期 */
+  var sideEl = document.getElementById('ov-side');
+  if (sideEl) sideEl.innerHTML = '<span class="tiny muted">交易日 ' + esc(st.day || '--') + '</span>';
+
+  /* 资金效率 + 系统状态 */
+  renderEfficiencyInto('ov-eff');
+  renderSysTable(st);
+}
+
+/** 系统状态表（概览卡） */
+function renderSysTable(st) {
+  var sch = st.scheduler || {};
+  var eng = st.engine || {};
+  var ticks = sch.ticks || {};
+  var svc = externalServices(st);
+  var engLine = eng.source
+    ? badge(eng.source === 'real' ? '真件' : '桩', eng.source === 'real' ? 'success' : 'warning') +
+      ' <span class="tiny muted">real:[' + esc((eng.real || []).join(', ') || '--') + '] stub:[' + esc((eng.stub || []).join(', ') || '--') + ']</span>'
+    : '--';
+  var healthHtml = S.health
+    ? badge('OK', 'success')
+    : '<span class="tiny muted">尚未检查（点右上「健康检查」）</span>';
+
+  var html = '<div class="wb-table-wrap"><table class="wb-table"><tbody>' +
+    '<tr><td class="muted">服务健康</td><td id="ov-health-cell">' + healthHtml + '</td></tr>' +
+    '<tr><td class="muted">调度器 tick</td><td>' + (ok(sch.lastTick) ? '<span class="num">' + esc(fmt.time(sch.lastTick)) + '</span> ' + fresh(sch.lastTick, { warn: 90, crit: 180 }) : '--') + '</td></tr>' +
+    '<tr><td class="muted">Timers</td><td class="num">选品 ' + esc(val(ticks.screen, 0)) + ' · 巡检 ' + esc(val(ticks.baskets, 0)) + ' · 日结 ' + esc(val(ticks.daily, 0)) + '</td></tr>' +
+    '<tr><td class="muted">引擎来源</td><td>' + engLine + '</td></tr>' +
+    '<tr><td class="muted">外部服务单元</td><td>' + (svc ? esc(typeof svc === 'string' ? svc : JSON.stringify(svc)) : '--') + '</td></tr>' +
+    '</tbody></table></div>';
+  var el = document.getElementById('ov-sys');
+  if (el) el.innerHTML = html;
+}
+
+/* ---- 回测门槛卡 ---- */
+
+var BT_LABELS = {
+  trades: '交易笔数', winRate: '胜率', expectancyUsd: '单笔期望', profitFactor: '盈亏比 PF',
+  maxDrawdownPct: '最大回撤', netPnlUsd: '净盈亏', totalPnlUsd: '总盈亏', netProfitUsd: '净利润',
+  returnPct: '收益率', days: '回测天数', startEquity: '起始权益', endEquity: '期末权益',
+  wins: '胜场', losses: '负场', avgWinUsd: '平均盈利', avgLossUsd: '平均亏损',
+  fills: '成交笔数', avgSlipBps: '平均滑点', maxSlipBps: '最大滑点', makerPct: 'Maker 占比',
+  feesUsd: '手续费', fundingUsd: '资金费', slipBps: '滑点', count: '笔数',
+};
+  /* 2026-09-21 补：所有回测字段的中文标签（缺一个就会把原始字段名显示到界面上） */
+  Object.assign(BT_LABELS, {
+    trades:'交易笔数', winRate:'胜率', expectancyUsd:'单笔期望', expectancyPct:'单笔期望(%)',
+    profitFactor:'盈亏比 PF', maxDrawdownPct:'最大回撤', avgLevelsUsed:'平均层数', level6Rate:'满层率',
+    takeProfitCount:'止盈次数', stopLossCount:'止损次数', timeStopCount:'超时离场', liquidationCount:'爆仓次数',
+    totalFeesUsd:'手续费合计', totalFundingUsd:'资金费合计', netPnlUsd:'净盈亏', returnPct:'收益率',
+    avgHours:'平均持仓(h)', maxHours:'最长持仓(h)', endEquity:'期末权益', days:'天数', bars:'K线根数',
+    feeBps:'成本(bps)', slipBps:'滑点(bps)', counters:'计数'
+  });
+
+/** 智能格式化：按 key 名猜测单位 */
+function fmtSmart(key, v) {
+  var n = num(v);
+  if (!isFinite(n)) return String(v == null ? '--' : v);
+  var k = String(key).toLowerCase();
+  if (/pct|rate/.test(k)) { var x = Math.abs(n) <= 1 ? n * 100 : n; return fmt.num(x, 2) + '%'; }
+  if (/bps/.test(k)) return fmt.num(n, 1) + ' bps';
+  if (/usd|equity|pnl|fee|cost|expectancy/.test(k)) return fmt.usd(n);
+  if (/ms$/.test(k)) return fmt.num(n, 0) + ' ms';
+  if (Number.isInteger(n)) return fmt.num(n, 0);
+  return fmt.num(n, Math.abs(n) >= 1 ? 2 : 4);
+}
+
+/** 通用 kv 网格（标量字段，label 中文映射） */
+function kvGrid(obj, labels) {
+  if (!obj || typeof obj !== 'object') return '';
+  var cells = '';
+  Object.keys(obj).forEach(function (k) {
+    var v = obj[k];
+    if (v && typeof v === 'object') return; // 嵌套对象另行处理
+    var label = (labels && labels[k]) || BT_LABELS[k] || k;
+    cells += '<div class="kv"><div class="kv-label">' + esc(label) + '</div>' +
+      '<div class="kv-value">' + esc(fmtSmart(k, v)) + '</div></div>';
+  });
+  return cells ? '<div class="kv-grid">' + cells + '</div>' : '';
+}
+
+async function loadBacktest() {
+  var el = document.getElementById('ov-bt');
+  if (!el) return;
+  if (!S.backtest) el.innerHTML = '<div class="wb-skel"></div>';
+  try {
+    var d = await WB.api.get('/api/martin/backtest');
+    S.backtest = d;
+    toastReset('backtest');
+    renderBacktest(d);
+  } catch (e) {
+    toastOnce('backtest', '回测摘要加载失败：' + (e && e.error || '网络错误'));
+    el.innerHTML = errBox(e && e.error);
+  }
+}
+
+function renderBacktest(d) {
+  var el = document.getElementById('ov-bt');
+  if (!el) return;
+  var summary = d.summary || (d.backtest && d.backtest.summary) || null;
+  var fileLine = '';
+  if (d.file || d.fileName || d.name || d.mtime) {
+    fileLine = '<div class="tiny muted" style="margin-bottom:8px">文件 <span class="num">' +
+      esc(d.file || d.fileName || d.name || '--') + '</span>' +
+      (ok(d.mtime) ? ' · 更新于 <span class="num">' + esc(fmt.time(d.mtime)) + '</span> ' + fresh(d.mtime, { warn: 86400, crit: 604800 }) : '') +
+      (d.size ? ' · ' + esc(compactUsd(d.size)) + 'B' : '') + '</div>';
+  }
+  var body = summary
+    ? kvGrid(summary, BT_LABELS) ||
+      '<div class="tiny muted">summary 暂无可展示标量字段</div>'
+    : WB.empty('暂无回测摘要', '后端尚未生成回测结果，可点右上「触发回测（后台）」。', '📊');
+  var note = '<details class="wb-details" style="margin-top:8px"><summary>判定门槛说明</summary>' +
+    '<div class="details-body">回测摘要用于评估参数质量：关注胜率、单笔期望、盈亏比（PF）与最大回撤。具体通过门槛由服务端判定，本页仅展示结果。</div></details>';
+  el.innerHTML = fileLine + body + note;
+}
+
+/** 触发回测（后台）——POST 同路径，失败 toast */
+async function onRunBacktest(btn) {
+  btn.classList.add('is-loading');
+  try {
+    await WB.api.post('/api/martin/backtest');
+    WB.toast('回测已触发（后台运行）', 'success');
+  } catch (e) {
+    WB.toast('触发回测失败：' + (e && e.error || '接口不可用'), 'error');
+  } finally {
+    btn.classList.remove('is-loading');
+  }
+}
+
+/** 确认解除熔断：confirm → POST（接口缺失时 catch 提示） */
+async function onBreakerClear() {
+  var yes = await WB.confirm('确认解除熔断？', '解除后机器人将恢复正常下单。请确认风险已排除。');
+  if (!yes) return;
+  try {
+    await WB.api.post('/api/martin/clear-circuit-breaker');
+    WB.toast('熔断已解除', 'success');
+    loadState();
+  } catch (e) {
+    WB.toast('解除失败：' + (e && e.error || '接口不可用（待后端支持）'), 'error');
+  }
+}
+
+/** 概览健康检查按钮 */
+function onHealthCheck() {
+  var cell = document.getElementById('ov-health-cell');
+  if (cell) cell.innerHTML = '<span class="tiny muted">检查中…</span>';
+  WB.api.get('/api/health').then(function (h) {
+    S.health = h;
+    var c = document.getElementById('ov-health-cell');
+    if (c) c.innerHTML = badge('OK', 'success') + ' <span class="tiny muted num">' +
+      esc(h && h.uptimeSec !== undefined ? 'uptime ' + fmt.num(h.uptimeSec, 0) + 's' : '') + '</span>';
+  }).catch(function (e) {
+    S.health = null;
+    var c = document.getElementById('ov-health-cell');
+    if (c) c.innerHTML = badge('异常', 'danger') + ' <span class="tiny muted">' + esc(e && e.error || '') + '</span>';
+  });
+}
+
+/* ==================== 2. 篮子 baskets ==================== */
+
+var CLOSE_REASON = { take_profit: '止盈', stop: '止损', time: '超时', unknown: '其他' };
+
+async function loadBaskets() {
+  try {
+    var d = await WB.api.get('/api/martin/baskets');
+    S.baskets = d;
+    if (typeof renderEfficiencyInto === 'function') { renderEfficiencyInto('ov-eff'); if (document.getElementById('pnl-eff')) renderEfficiencyInto('pnl-eff'); }
+    toastReset('baskets');
+    renderBaskets(d);
+    // 资金效率依赖 baskets.totals，顺手刷新
+    if (activeSection === 'overview') renderEfficiencyInto('ov-eff');
+    if (activeSection === 'pnl') renderEfficiencyInto('pnl-eff');
+  } catch (e) {
+    toastOnce('baskets', '篮子加载失败：' + (e && e.error || '网络错误'));
+    document.getElementById('bk-list').innerHTML = errBox(e && e.error);
+    document.getElementById('bk-history').innerHTML = '';
+  }
+}
+
+function renderBaskets(d) {
+  var list = Array.isArray(d.baskets) ? d.baskets : [];
+  var sideEl = document.getElementById('bk-side');
+  if (sideEl) {
+    sideEl.innerHTML = '<span class="tiny muted num">在仓 ' + esc(val(d.count, 0)) + ' / ' + esc(val(d.maxBaskets, 0)) +
+      (d.totals ? ' · 合计保证金 ' + esc(usd(d.totals.marginUsed)) + ' · 浮盈 <span class="' + updown(d.totals.upl) + '">' + esc(signed(d.totals.upl) + ' U') + '</span>' : '') + '</span>';
+  }
+
+  // paused 警示条
+  var alertEl = document.getElementById('bk-alert');
+  if (d.paused === true) {
+    alertEl.hidden = false;
+    alertEl.innerHTML = '<div class="wb-alert is-warning">⚠ 开仓已暂停（paused=true）：不会再开新篮，已有篮子继续管理。</div>';
+  } else {
+    alertEl.hidden = true;
+    alertEl.innerHTML = '';
+  }
+
+  // 篮子卡
+  var host = document.getElementById('bk-list');
+  if (!list.length) {
+    host.innerHTML = WB.empty('当前无篮子', '在候选池点「开篮·预览」可创建。', '🧺');
+  } else {
+    host.innerHTML = list.map(basketCard).join('');
+    // 价格轴需要真实 DOM 挂载
+    var axes = host.querySelectorAll('.basket-axis');
+    list.forEach(function (b, i) {
+      if (!axes[i]) return;
+      var liq = ok(b.liqPxReal) ? num(b.liqPxReal) : num(b.liquidationPx);
+      WB.priceAxis(axes[i], {
+        liq: liq, stop: b.stopPx, avg: b.avgPx, add: b.nextAddPx,
+        tp: b.takeProfitPx, price: b.lastPrice, atrPct: b.atrPct,
+        side: b.side === 'short' ? 'short' : 'long',
+      });
+    });
+  }
+
+  // 已平仓历史
+  renderBasketHistory(Array.isArray(d.history) ? d.history.slice(-20).reverse() : []);
+}
+
+function basketCard(b) {
+  var ghost = b.posMissingAt !== null && b.posMissingAt !== undefined;
+  var px = num(b.lastPrice), stop = num(b.stopPx);
+  var stopDistPct = (isFinite(px) && px > 0 && isFinite(stop)) ? Math.abs(px - stop) / px * 100 : NaN;
+  var nearStop = isFinite(stopDistPct) && stopDistPct < 10;
+
+  var cls = 'wb-card basket-card' + (ghost ? ' is-critical' : nearStop ? ' is-danger' : '');
+  var sideBadge = b.side === 'short' ? badge('做空 short', 'danger') : badge('做多 long', 'success');
+  var lc = num(b.levelCount), ml = num(b.maxLevels);
+  var lvlPct = (isFinite(lc) && isFinite(ml) && ml > 0) ? Math.max(0, Math.min(100, lc / ml * 100)) : 0;
+
+  var head = '<div class="basket-head">' +
+    '<div class="bh-left"><span class="basket-inst">' + esc(b.instId || '--') + '</span>' +
+      sideBadge +
+      (b.sector ? badge(b.sector, 'neutral') : '') +
+      (ghost ? badge('幽灵仓', 'danger') : '') +
+      (nearStop && !ghost ? badge('接近止损 ' + fmt.num(stopDistPct, 1) + '%', 'danger') : '') +
+    '</div>' +
+    '<div class="bh-right"><span>持仓 <b class="num">' + esc(val(b.heldH, 1)) + 'h</b></span>' +
+      '<span>层 <b class="num">' + esc(ok(lc) ? fmt.num(lc, 0) : '--') + '/' + esc(ok(ml) ? fmt.num(ml, 0) : '--') + '</b></span>' +
+      '<span class="lvl-bar"><i style="width:' + lvlPct.toFixed(0) + '%"></i></span>' +
+    '</div></div>';
+
+  var grid = '<div class="basket-grid">' +
+    bcell('均价', val(b.avgPx, 4)) +
+    bcell('浮盈', '<span class="' + updown(b.upl) + '">' + esc(signed(b.upl) + ' U') + ' / ' + esc(signed(b.uplPct, 2) + '%') + '</span>', true) +
+    bcell('保证金', usd(b.marginUsd)) +
+    bcell('名义', usd(b.notionalUsd)) +
+    bcell('下一加仓价', val(b.nextAddPx, 4)) +
+    bcell('ATR%', pct(b.atrPct)) +
+    '</div>';
+
+  var liq = ok(b.liqPxReal) ? num(b.liqPxReal) : num(b.liquidationPx);
+  var foot = '<div class="basket-foot">' +
+    '<span class="fp">止盈 <b class="up">' + esc(val(b.takeProfitPx, 4)) + '</b></span>' +
+    '<span class="fp">止损 <b class="down">' + esc(val(b.stopPx, 4)) + '</b></span>' +
+    '<span class="fp">爆仓 <b class="crit-text">' + esc(isFinite(liq) ? fmt.num(liq, 4) : '--') + '</b>' +
+      (ok(b.liqPxReal) ? '' : ' <span class="tiny muted">(估算)</span>') + '</span>' +
+    '<span class="fp">兜底 ≤ <b>' + esc(usd(b.stopUsd)) + '</b></span>' +
+    '<span class="fp">' + (ok(b.lastQuoteAt) ? '行情 ' + fresh(b.lastQuoteAt, { warn: 60, crit: 300 }) : '行情 --') + '</span>' +
+    '</div>';
+
+  return '<div class="' + cls + '">' + head + '<div class="basket-axis"></div>' + grid + foot + '</div>';
+}
+
+function bcell(label, valueHtml, raw) {
+  return '<div class="bcell"><div class="b-label">' + esc(label) + '</div>' +
+    '<div class="b-value">' + (raw ? valueHtml : esc(valueHtml)) + '</div></div>';
+}
+
+function renderBasketHistory(hist) {
+  var el = document.getElementById('bk-history');
+  if (!hist.length) {
+    el.innerHTML = WB.empty('暂无已平仓记录', '', '🗂️');
+    return;
+  }
+  var rows = hist.map(function (h) {
+    var reason = CLOSE_REASON[h.closeReason] || '其他';
+    return '<tr>' +
+      '<td><b>' + esc(h.instId || '--') + '</b></td>' +
+      '<td>' + (h.side === 'short' ? badge('空', 'danger') : h.side === 'long' ? badge('多', 'success') : '--') + '</td>' +
+      '<td class="num">' + esc(val(h.levelCount, 0)) + '</td>' +
+      '<td>' + esc(reason) + '</td>' +
+      '<td class="num">' + esc(ok(h.closedAt) ? fmt.time(h.closedAt) : '--') + '</td>' +
+      '<td class="num ' + updown(h.realizedPnl) + '">' + esc(signed(h.realizedPnl) + ' U') + '</td>' +
+      '</tr>';
+  }).join('');
+  el.innerHTML = '<div class="wb-table-wrap"><table class="wb-table"><thead><tr>' +
+    '<th>标的</th><th>方向</th><th class="num">层数</th><th>平仓原因</th><th class="num">平仓时间</th><th class="num">已实现盈亏</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+/* ==================== 3. 候选池 candidates ==================== */
+
+var REGIME = {
+  trend_up: ['上升趋势', 'success'], range: ['震荡', 'neutral'],
+  trend_down: ['下降趋势', 'danger'], unclear: ['过渡/不明', 'warning'],
+};
+
+async function loadCandidates() {
+  try {
+    var d = await WB.api.get('/api/martin/candidates');
+    S.candidates = d;
+    toastReset('candidates');
+    renderCandidates(d);
+  } catch (e) {
+    toastOnce('candidates', '候选池加载失败：' + (e && e.error || '网络错误'));
+    document.getElementById('cd-table').innerHTML = errBox(e && e.error);
+  }
+}
+
+function allowBadge(arr) {
+  if (!Array.isArray(arr) || !arr.length) return badge('不开新仓', 'neutral');
+  var hasL = arr.indexOf('long') >= 0, hasS = arr.indexOf('short') >= 0;
+  if (hasL && hasS) return badge('双向', 'brand');
+  if (hasL) return badge('只多', 'success');
+  if (hasS) return badge('只空', 'danger');
+  return badge('不开新仓', 'neutral');
+}
+
+function renderCandidates(d) {
+  var uni = d.universe || {};
+  var picked = Array.isArray(d.picked) ? d.picked : [];
+
+  // 工具行
+  document.getElementById('cd-toolbar').innerHTML =
+    '<span>更新 <b class="num">' + esc(ok(d.updatedAt) ? fmt.time(d.updatedAt) : '--') + '</b> ' +
+      (ok(d.updatedAt) ? fresh(d.updatedAt, { warn: 600, crit: 1800 }) : '') + '</span>' +
+    '<span>K线 ' + esc(d.bar || '--') + '</span>' +
+    '<span>全市场 <b class="num">' + esc(val(uni.swaps, 0)) + '</b> 个 swaps</span>' +
+    '<span>耗时 <b class="num">' + esc(ok(d.tookMs) ? fmt.num(num(d.tookMs) / 1000, 1) + 's' : '--') + '</b></span>' +
+    '<span class="muted">达标 ' + esc(val(uni.aboveVolume, 0)) + ' · 扫描 ' + esc(val(uni.scanned, 0)) + '</span>';
+
+  // 主表
+  if (!picked.length) {
+    document.getElementById('cd-table').innerHTML =
+      WB.empty('候选池为空', '点右上「立即选品」重跑全市场选品。', '🎯');
+  } else {
+    var rows = picked.map(function (c, i) {
+      var rg = REGIME[c.regime] || [c.regime || '--', 'neutral'];
+      var sc = c.score || {};
+      return '<tr data-idx="' + i + '">' +
+        '<td class="num muted">' + (i + 1) + '</td>' +
+        '<td><b>' + esc(c.instId || '--') + '</b>' + (c.sector ? ' <span class="tiny muted">' + esc(c.sector) + '</span>' : '') + '</td>' +
+        '<td class="num">' + esc(val(c.last, 5)) + '</td>' +
+        '<td class="num">' + esc(compactUsd(c.notionalUsd)) + '</td>' +
+        '<td class="num">' + esc(pct(c.atrPct)) + '</td>' +
+        '<td class="num">' + esc(val(c.vr5, 3)) + '</td>' +
+        '<td class="num"><b>' + esc(val(sc.total, 3)) + '</b></td>' +
+        '<td>' + badge(rg[0], rg[1]) + ' ' + allowBadge(c.allowDirections) + '</td>' +
+        '<td style="white-space:nowrap">' +
+          '<button class="wb-btn is-small cd-open" data-idx="' + i + '" aria-label="开篮预览 ' + esc(c.instId || '') + '">开篮·预览</button> ' +
+          '<button class="wb-row-toggle cd-detail" data-idx="' + i + '" aria-label="展开详情">详情 ▸</button>' +
+        '</td></tr>';
+    }).join('');
+    document.getElementById('cd-table').innerHTML =
+      '<div class="wb-table-wrap"><table class="wb-table"><thead><tr>' +
+      '<th class="num">#</th><th>品种</th><th class="num">现价</th><th class="num">成交额</th>' +
+      '<th class="num">ATR%</th><th class="num">VR5</th><th class="num">总分</th><th>状态 / 允许方向</th><th>操作</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  // 底部：评分公式 + rejectedSample
+  var foot = '<details class="wb-details"><summary>评分公式说明</summary>' +
+    '<div class="details-body">总分 = 回归性 × 波动率 × 流动性的加权合成（score.reversion / volatility / liquidity）。' +
+    '回归性看 VR5（方差比，&lt;1 为均值回归，马丁友好）与 ρ₁（一阶自相关，&lt;0 为回归）；' +
+    '波动率看 ATR%；流动性看成交额。regime=unclear 或 allowDirections 为空时不开新仓。</div></details>';
+  var rej = Array.isArray(d.rejectedSample) ? d.rejectedSample : [];
+  if (rej.length) {
+    foot += '<details class="wb-details" style="margin-top:8px"><summary>被刷掉样本（' + rej.length + '）</summary>' +
+      '<div class="details-body"><ul class="msg-list">' +
+      rej.map(function (r) {
+        return '<li><b>' + esc(r.instId || '--') + '</b>：' + esc(r.reason || '--') + '</li>';
+      }).join('') + '</ul></div></details>';
+  }
+  document.getElementById('cd-foot').innerHTML = foot;
+}
+
+/** 候选池行内详情展开 */
+function toggleCandidateDetail(idx, btn) {
+  var d = S.candidates;
+  var c = d && Array.isArray(d.picked) ? d.picked[idx] : null;
+  if (!c) return;
+  var tr = btn.closest('tr');
+  var next = tr && tr.nextElementSibling;
+  if (next && next.classList.contains('row-detail')) { next.remove(); btn.textContent = '详情 ▸'; return; }
+
+  var sc = c.score || {};
+  function di(k, v) { return '<span class="detail-item">' + esc(k) + ' <b>' + esc(v) + '</b></span>'; }
+  var html = '<tr class="row-detail"><td colspan="9"><div class="detail-grid">' +
+    di('P₁ (ρ₁)', val(c.rho1, 3)) +
+    di('回归频率 rf', val(c.rf, 3)) +
+    di('ADX', val(c.adx, 0)) +
+    di('费率 funding', pct(c.fundingPct, 3)) +
+    di('回归性', val(sc.reversion, 3)) +
+    di('波动率', val(sc.volatility, 3)) +
+    di('流动性', val(sc.liquidity, 3)) +
+    di('最小名义', usd(c.minNotionalUsd)) +
+    di('合约面值 ctVal', val(c.ctVal, 4)) +
+    di('最小下单 minSz', val(c.minSz, 4)) +
+    di('最大杠杆', ok(c.maxLever) ? fmt.num(num(c.maxLever), 0) + 'x' : '--') +
+    '</div></td></tr>';
+  tr.insertAdjacentHTML('afterend', html);
+  btn.textContent = '详情 ▾';
+}
+
+/** 开篮·预览：POST 预览接口，接口缺失时 toast 提示 */
+async function onOpenPreview(idx, btn) {
+  var d = S.candidates;
+  var c = d && Array.isArray(d.picked) ? d.picked[idx] : null;
+  if (!c) return;
+  var dirs = Array.isArray(c.allowDirections) ? c.allowDirections : [];
+  if (!dirs.length) { WB.toast('该品种当前不允许开新仓（allowDirections 为空）', 'info'); return; }
+  btn.classList.add('is-loading');
+  try {
+    await WB.api.post('/api/martin/open-preview', { instId: c.instId, side: dirs[0] });
+    WB.toast('开篮预览已生成（' + c.instId + ' ' + dirs[0] + '）', 'success');
+  } catch (e) {
+    WB.toast('预览功能待后端支持（' + (e && e.error || '接口未就绪') + '）', 'error');
+  } finally {
+    btn.classList.remove('is-loading');
+  }
+}
+
+/** 立即选品 */
+async function onScreenNow(btn) {
+  btn.classList.add('is-loading');
+  try {
+    await WB.api.post('/api/martin/screen-now');
+    WB.toast('已触发选品，稍后自动刷新结果', 'success');
+    setTimeout(loadCandidates, 3000);
+  } catch (e) {
+    WB.toast('选品触发失败：' + (e && e.error || '网络错误'), 'error');
+  } finally {
+    btn.classList.remove('is-loading');
+  }
+}
+
+/* ==================== 4. 收益 pnl ==================== */
+
+function renderPnl() {
+  renderEfficiencyInto('pnl-eff');
+  renderPnlDaily(S.state);
+}
+
+/** 日结记录：state 里防御式找数组字段，没有 → 空态 */
+function renderPnlDaily(st) {
+  var el = document.getElementById('pnl-daily');
+  if (!el) return;
+  var recs = (st && (st.dailyReports || st.dailyRecords || st.dailies || st.daily)) || null;
+  if (!Array.isArray(recs) || !recs.length) {
+    el.innerHTML = WB.empty('尚无日结记录（每日 00:05）', '日结调度每天 00:05 产出一条记录。', '📅');
+    return;
+  }
+  var rows = recs.slice().reverse().map(function (r) {
+    return '<tr>' +
+      '<td class="num">' + esc(r.day || r.date || '--') + '</td>' +
+      '<td class="num ' + updown(r.pnl !== undefined ? r.pnl : r.dayPnl) + '">' + esc(signed(r.pnl !== undefined ? r.pnl : r.dayPnl) + ' U') + '</td>' +
+      '<td class="num ' + updown(r.pnlPct) + '">' + esc(signed(r.pnlPct, 2) + '%') + '</td>' +
+      '<td class="num">' + esc(usd(r.equity)) + '</td>' +
+      '<td class="num">' + esc(val(r.trades, 0)) + '</td>' +
+      '<td class="num">' + esc(val(r.stops, 0)) + '</td>' +
+      '<td class="num">' + esc(val(r.openBaskets, 0)) + '</td>' +
+      '</tr>';
+  }).join('');
+  el.innerHTML = '<div class="wb-table-wrap"><table class="wb-table"><thead><tr>' +
+    '<th>日期</th><th class="num">当日盈亏</th><th class="num">幅度</th><th class="num">权益</th>' +
+    '<th class="num">成交笔数</th><th class="num">止损次数</th><th class="num">留仓篮子</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+/* ==================== 5. 验算 verify ==================== */
+
+async function loadVerify() {
+  var el = document.getElementById('vf-body');
+  if (!S.verify) el.innerHTML = '<div class="wb-skel wb-skel-card"></div>';
+  try {
+    var d = await WB.api.get('/api/verify/report');
+    S.verify = d;
+    toastReset('verify');
+    renderVerify(d);
+  } catch (e) {
+    toastOnce('verify', '验算报告加载失败：' + (e && e.error || '网络错误'));
+    el.innerHTML = errBox(e && e.error);
+  }
+}
+
+function renderVerify(d) {
+  var el = document.getElementById('vf-body');
+  var rep = d && d.report;
+  if (!rep || rep.ok === false) {
+    el.innerHTML = WB.empty('尚无验算报告', '后端尚未生成对账报告；点右上「刷新」重试。', '🔍');
+    return;
+  }
+
+  var out = '';
+
+  // 生成信息
+  out += '<div class="toolbar">' +
+    '<span>文件 <b>' + esc(d.file || '--') + '</b></span>' +
+    '<span>生成于 <b class="num">' + esc(ok(rep.generatedAt) ? fmt.time(rep.generatedAt) : '--') + '</b> ' +
+      (ok(rep.generatedAt) ? fresh(rep.generatedAt, { warn: 86400, crit: 604800 }) : '') + '</span>' +
+    (rep.version !== undefined ? '<span>v' + esc(String(rep.version)) + '</span>' : '') +
+    '</div>';
+
+  // headline 指标网格
+  out += '<div class="wb-card"><div class="card-head"><span class="card-title">headline</span></div>' +
+    (kvGrid(rep.headline, null) || '<div class="tiny muted">headline 暂无可展示字段</div>') + '</div>';
+
+  // 滑点表：优先找数组（rows/fills/items/list），否则 kv 网格
+  var slip = rep.slippage || null;
+  var slipRows = slip && (slip.rows || slip.fills || slip.items || slip.list);
+  out += '<div class="wb-card"><div class="card-head"><span class="card-title">实测滑点</span></div>';
+  if (Array.isArray(slipRows) && slipRows.length) {
+    out += '<div class="wb-table-wrap"><table class="wb-table"><thead><tr>' +
+      '<th class="num">时间</th><th>标的</th><th>类型</th><th>成交向</th>' +
+      '<th class="num">信号价</th><th class="num">实际成交</th><th class="num">滑点 bps</th><th class="num">名义 U</th><th class="num">笔数</th>' +
+      '</tr></thead><tbody>' +
+      slipRows.map(function (r) {
+        return '<tr>' +
+          '<td class="num">' + esc(ok(r.ts || r.time) ? fmt.time(r.ts || r.time) : '--') + '</td>' +
+          '<td><b>' + esc(r.instId || '--') + '</b></td>' +
+          '<td>' + esc(r.type || '--') + '</td>' +
+          '<td>' + esc(r.side || '--') + '</td>' +
+          '<td class="num">' + esc(val(r.signalPx !== undefined ? r.signalPx : r.signal, 5)) + '</td>' +
+          '<td class="num">' + esc(val(r.fillPx !== undefined ? r.fillPx : r.fill, 5)) + '</td>' +
+          '<td class="num">' + esc(val(r.slippageBps !== undefined ? r.slippageBps : r.bps, 1)) + '</td>' +
+          '<td class="num">' + esc(usd(r.notionalUsd)) + '</td>' +
+          '<td class="num">' + esc(val(r.count, 0)) + '</td>' +
+          '</tr>';
+      }).join('') + '</tbody></table></div>';
+  } else if (slip && typeof slip === 'object') {
+    out += kvGrid(slip, null) || '<div class="tiny muted">滑点数据暂无可展示字段</div>';
+  } else {
+    out += '<div class="tiny muted">--</div>';
+  }
+  out += '</div>';
+
+  // 回测 vs 实盘对比（防御式找字段）
+  var cmp = rep.compare || rep.comparison || rep.btVsLive || rep.backtestVsLive || null;
+  if (cmp) {
+    out += '<div class="wb-card"><div class="card-head"><span class="card-title">回测 vs 实盘</span></div>';
+    if (Array.isArray(cmp) && cmp.length) {
+      var keys = Object.keys(cmp[0]);
+      out += '<div class="wb-table-wrap"><table class="wb-table"><thead><tr>' +
+        keys.map(function (k) { return '<th>' + esc(k) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        cmp.map(function (r) {
+          return '<tr>' + keys.map(function (k) {
+            var v = r[k];
+            return '<td class="num">' + esc(v && typeof v === 'object' ? JSON.stringify(v) : fmtSmart(k, v)) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') + '</tbody></table></div>';
+    } else if (typeof cmp === 'object') {
+      out += kvGrid(cmp, null) || '<div class="tiny muted">--</div>';
+    }
+    out += '</div>';
+  }
+
+  // costs / levels 摘要
+  out += '<div class="wb-card"><div class="card-head"><span class="card-title">成本 / 层数分布</span></div>' +
+    '<div class="detail-grid">' +
+    '<span class="detail-item" style="flex:1;min-width:240px">costs' +
+      (kvGrid(rep.costs, null) || '<div class="tiny muted">--</div>') + '</span>' +
+    '<span class="detail-item" style="flex:1;min-width:240px">levels' +
+      (kvGrid(rep.levels, null) || '<div class="tiny muted">--</div>') + '</span>' +
+    '</div></div>';
+
+  el.innerHTML = out;
+}
+
+/* ==================== 6. 报告 reports ==================== */
+
+async function loadReports() {
+  var el = document.getElementById('rp-list');
+  if (!S.reports) el.innerHTML = '<div class="wb-skel"></div><div class="wb-skel"></div>';
+  try {
+    var d = await WB.api.get('/api/reports');
+    S.reports = d;
+    toastReset('reports');
+    renderReportList(d);
+  } catch (e) {
+    toastOnce('reports', '报告列表加载失败：' + (e && e.error || '网络错误'));
+    el.innerHTML = errBox(e && e.error);
+  }
+}
+
+function renderReportList(d) {
+  var el = document.getElementById('rp-list');
+  var items = Array.isArray(d.items) ? d.items : (Array.isArray(d) ? d : []);
+  if (!items.length) {
+    el.innerHTML = WB.empty('暂无报告', '机器人产出报告后会出现在这里。', '📄');
+    return;
+  }
+  // 按 cycle（缺则 bucket）分组，保持出现顺序
+  var groups = [], seen = {};
+  items.forEach(function (it) {
+    var g = it.cycle || it.bucket || '其他';
+    if (!seen[g]) { seen[g] = []; groups.push({ name: g, items: seen[g] }); }
+    seen[g].push(it);
+  });
+  el.innerHTML = groups.map(function (g) {
+    return '<div class="rep-group-title">' + esc(g.name) + '</div>' +
+      g.items.map(function (it) {
+        var p = it.path || it.name || '';
+        return '<div class="rep-item" data-path="' + esc(p) + '" role="button" tabindex="0" aria-label="查看报告 ' + esc(it.name || p) + '">' +
+          '<span class="rep-name">' + esc(it.name || p || '--') + '</span>' +
+          '<span class="rep-meta">' + esc(ok(it.mtime) ? fmt.time(it.mtime) : '--') +
+            (it.size ? ' · ' + esc(compactUsd(it.size)) + 'B' : '') + '</span>' +
+          '</div>';
+      }).join('');
+  }).join('');
+}
+
+/** 加载报告全文：/api/report 可能返回 JSON 或纯文本，做双兼容 */
+async function openReport(path, itemEl) {
+  document.querySelectorAll('#rp-list .rep-item').forEach(function (n) { n.classList.remove('is-active'); });
+  if (itemEl) itemEl.classList.add('is-active');
+  var viewer = document.getElementById('rp-viewer');
+  document.getElementById('rp-viewer-title').textContent = path;
+  viewer.innerHTML = '<div class="wb-skel wb-skel-card"></div>';
+  try {
+    var resp = await fetch('/api/report?path=' + encodeURIComponent(path));
+    if (!resp.ok) throw { error: 'HTTP ' + resp.status };
+    var ct = resp.headers.get('content-type') || '';
+    var text;
+    if (ct.indexOf('json') >= 0) {
+      var j = await resp.json();
+      if (j && j.ok === false) throw { error: j.error || 'ok:false' };
+      text = (j && (j.content || j.text || j.markdown || j.body)) || '';
+    } else {
+      text = await resp.text();
+    }
+    viewer.innerHTML = text ? renderMarkdown(text)
+      : WB.empty('报告为空', '', '📄');
+  } catch (e) {
+    viewer.innerHTML = errBox(e && e.error);
+  }
+}
+
+/** 轻量 markdown 美化：标题分级 + 代码块，其余等宽逐行 */
+function renderMarkdown(text) {
+  var out = '', inCode = false, codeBuf = '';
+  String(text).split('\n').forEach(function (line) {
+    if (/^\s*```/.test(line)) {
+      if (inCode) { out += '<pre class="md-code">' + codeBuf + '</pre>'; codeBuf = ''; inCode = false; }
+      else inCode = true;
+      return;
+    }
+    if (inCode) { codeBuf += esc(line) + '\n'; return; }
+    var m = /^(#{1,4})\s+(.*)$/.exec(line);
+    if (m) {
+      var lv = Math.min(m[1].length, 3);
+      out += '<div class="md-h md-h' + lv + '">' + esc(m[2]) + '</div>';
+      return;
+    }
+    out += '<div class="md-line">' + (esc(line) || ' ') + '</div>';
+  });
+  if (inCode) out += '<pre class="md-code">' + codeBuf + '</pre>';
+  return '<div class="md-view">' + out + '</div>';
+}
+
+/* ==================== 7. 日志 log ==================== */
+
+function renderLogs(st) {
+  var box = document.getElementById('log-box');
+  if (!box) return;
+  var log = st && st.log;
+  if (!Array.isArray(log) || !log.length) {
+    box.innerHTML = WB.empty('暂无日志', '调度与篮子事件会出现在这里（state.log）。', '🧾');
+    return;
+  }
+  var auto = document.getElementById('log-autoscroll');
+  box.innerHTML = log.map(function (e) {
+    var ts = (e && typeof e === 'object') ? (e.ts || e.time || e.at) : NaN;
+    var text = (e && typeof e === 'object') ? (e.text || e.msg || e.message || JSON.stringify(e)) : String(e);
+    return '<div class="log-item">' +
+      (ok(ts) ? fresh(ts, { warn: 3600, crit: 86400 }) : '<span class="wb-fresh"><i class="fresh-dot"></i>--</span>') +
+      '<span class="log-text">' + esc(text) + '</span></div>';
+  }).join('');
+  if (auto && auto.checked) box.scrollTop = box.scrollHeight;
+}
+
+/* ==================== 8. 参数 policy ==================== */
+
+var plFields = [];       // schema fields
+var plCurrent = {};      // 保存时基准值
+var plDirty = {};        // key -> true
+
+async function loadPolicy() {
+  var el = document.getElementById('pl-body');
+  if (!S.policy) el.innerHTML = '<div class="wb-skel wb-skel-card"></div><div class="wb-skel wb-skel-card"></div>';
+  try {
+    var d = await WB.api.get('/api/martin/policy-schema');
+    S.policy = d;
+    toastReset('policy');
+    renderPolicy(d);
+  } catch (e) {
+    toastOnce('policy', '参数加载失败：' + (e && e.error || '网络错误'));
+    el.innerHTML = errBox(e && e.error);
+  }
+}
+
+function renderPolicy(d) {
+  plFields = Array.isArray(d.fields) ? d.fields : [];
+  plCurrent = (d.current && typeof d.current === 'object') ? Object.assign({}, d.current) : {};
+  plDirty = {};
+
+  if (!plFields.length) {
+    document.getElementById('pl-body').innerHTML = WB.empty('参数 schema 为空', '后端未返回字段定义。', '⚙️');
+    return;
+  }
+
+  // 预设条
+  var presets = (d.presets && typeof d.presets === 'object') ? d.presets : {};
+  var meta = d.meta || {};
+  var sideEl = document.getElementById('pl-side');
+  sideEl.innerHTML = '<span class="preset-bar">' +
+    '<span class="preset-label">预设：</span>' +
+    Object.keys(presets).map(function (name) {
+      return '<button class="wb-btn is-small pl-preset" data-preset="' + esc(name) + '" aria-label="套用预设 ' + esc(name) + '">' + esc(name) + '</button>';
+    }).join('') +
+    (ok(meta.fullOccupancyPct) ? badge('满层占用 ' + fmt.num(num(meta.fullOccupancyPct), 1) + '%', 'brand') : '') +
+    '</span>';
+
+  // 分组（保持出现顺序）
+  var groups = [], gseen = {};
+  plFields.forEach(function (f) {
+    var g = f.group || '其他';
+    if (!gseen[g]) { gseen[g] = []; groups.push({ name: g, fields: gseen[g] }); }
+    gseen[g].push(f);
+  });
+
+  var nav = '<nav class="policy-nav" aria-label="参数分组导航">' +
+    groups.map(function (g, i) {
+      return '<a href="javascript:void(0)" data-g="pg-' + i + '">' + esc(g.name) + '</a>';
+    }).join('') + '</nav>';
+
+  var cards = groups.map(function (g, i) {
+    return '<div class="wb-card pg-card" id="pg-' + i + '">' +
+      '<div class="card-head"><span class="card-title">' + esc(g.name) + '</span></div>' +
+      g.fields.map(fieldRow).join('') + '</div>';
+  }).join('');
+
+  document.getElementById('pl-body').innerHTML =
+    '<div class="policy-wrap">' + nav + '<div>' + cards +
+    '<div id="pl-msg" style="margin-top:16px"></div>' +
+    '<div class="policy-bar" style="margin-top:12px">' +
+      '<span class="dirty-count" id="pl-dirty">未修改</span>' +
+      '<span class="bar-actions">' +
+        '<button class="wb-btn" id="pl-reset" aria-label="重置为当前生效值">重置</button>' +
+        '<button class="wb-btn is-primary" id="pl-save" aria-label="保存并应用参数">保存并应用</button>' +
+      '</span>' +
+    '</div></div></div>';
+
+  bindPolicyEvents();
+  updateDirtyBar();
+}
+
+function fieldRow(f) {
+  var key = f.key || '';
+  var cur = plCurrent[key];
+  var input;
+  if (f.type === 'enum') {
+    var opts = Array.isArray(f.options) ? f.options : [];
+    input = '<select class="wb-select" data-key="' + esc(key) + '">' +
+      opts.map(function (o) {
+        var v = (o && typeof o === 'object') ? (o.value !== undefined ? o.value : o.label) : o;
+        var t = (o && typeof o === 'object') ? (o.label !== undefined ? o.label : o.value) : o;
+        return '<option value="' + esc(v) + '"' + (String(cur) === String(v) ? ' selected' : '') + '>' + esc(t) + '</option>';
+      }).join('') + '</select>';
+  } else {
+    input = '<input class="wb-input num" type="number" data-key="' + esc(key) + '"' +
+      (ok(f.min) ? ' min="' + esc(String(f.min)) + '"' : '') +
+      (ok(f.max) ? ' max="' + esc(String(f.max)) + '"' : '') +
+      (ok(f.step) ? ' step="' + esc(String(f.step)) + '"' : ' step="any"') +
+      ' value="' + esc(cur === undefined || cur === null ? '' : String(cur)) + '">';
+  }
+  return '<div class="wb-field" data-key="' + esc(key) + '">' +
+    '<div class="field-label">' + esc(f.label || key) +
+      (f.unit ? '<span class="field-unit">' + esc(f.unit) + '</span>' : '') + '</div>' +
+    '<div class="field-input">' + input + '</div>' +
+    '<div class="field-hint">' + esc(f.hint || '') +
+      '<span class="wb-badge is-danger field-warn" hidden>⚠ 偏高</span></div>' +
+    '</div>';
+}
+
+function fieldInputValue(f, input) {
+  if (f.type === 'enum') return input.value;
+  var n = num(input.value);
+  return isFinite(n) ? n : input.value;
+}
+
+function sameVal(a, b) { return String(a) === String(b); }
+
+/** 重算 dirty + danger 标记 */
+function recalcPolicy() {
+  plDirty = {};
+  plFields.forEach(function (f) {
+    var input = document.querySelector('#pl-body [data-key="' + CSS.escape(f.key || '') + '"].wb-input, #pl-body [data-key="' + CSS.escape(f.key || '') + '"].wb-select');
+    if (!input) return;
+    var v = fieldInputValue(f, input);
+    if (!sameVal(v, plCurrent[f.key] === undefined ? '' : plCurrent[f.key])) plDirty[f.key] = true;
+
+    // danger 阈值
+    var row = input.closest('.wb-field');
+    var warnBadge = row ? row.querySelector('.field-warn') : null;
+    var danger = num(f.danger);
+    var over = f.type !== 'enum' && isFinite(danger) && isFinite(num(input.value)) && num(input.value) >= danger;
+    if (row) row.classList.toggle('is-danger', !!over);
+    if (warnBadge) warnBadge.hidden = !over;
+  });
+  updateDirtyBar();
+}
+
+function updateDirtyBar() {
+  var n = Object.keys(plDirty).length;
+  var el = document.getElementById('pl-dirty');
+  if (el) el.textContent = n ? '已改 ' + n + ' 项' : '未修改';
+  var save = document.getElementById('pl-save');
+  if (save) save.disabled = !n;
+}
+
+function bindPolicyEvents() {
+  var body = document.getElementById('pl-body');
+  body.querySelectorAll('.wb-input, .wb-select').forEach(function (input) {
+    input.addEventListener('input', recalcPolicy);
+    input.addEventListener('change', recalcPolicy);
+  });
+  // 锚点导航
+  body.querySelectorAll('.policy-nav a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var t = document.getElementById(a.getAttribute('data-g'));
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  document.getElementById('pl-reset').addEventListener('click', resetPolicyForm);
+  document.getElementById('pl-save').addEventListener('click', savePolicy);
+}
+
+function resetPolicyForm() {
+  plFields.forEach(function (f) {
+    var input = document.querySelector('#pl-body .wb-input[data-key="' + CSS.escape(f.key || '') + '"], #pl-body .wb-select[data-key="' + CSS.escape(f.key || '') + '"]');
+    if (!input) return;
+    var cur = plCurrent[f.key];
+    input.value = cur === undefined || cur === null ? '' : String(cur);
+  });
+  plDirty = {};
+  document.getElementById('pl-msg').innerHTML = '';
+  recalcPolicy();
+}
+
+/** 套用预设：填入表单并标记 dirty */
+function applyPreset(name) {
+  var presets = (S.policy && S.policy.presets) || {};
+  var p = presets[name];
+  if (!p || typeof p !== 'object') { WB.toast('预设「' + name + '」无数据', 'error'); return; }
+  plFields.forEach(function (f) {
+    if (!(f.key in p)) return;
+    var input = document.querySelector('#pl-body .wb-input[data-key="' + CSS.escape(f.key || '') + '"], #pl-body .wb-select[data-key="' + CSS.escape(f.key || '') + '"]');
+    if (input) input.value = String(p[f.key]);
+  });
+  recalcPolicy();
+  WB.toast('已套用预设「' + name + '」，请检查后保存', 'info');
+}
+
+/** 保存：body = 改动字段集；展示 note/occupiedPct/errors/warnings/clamped */
+async function savePolicy() {
+  var body = {};
+  plFields.forEach(function (f) {
+    if (!plDirty[f.key]) return;
+    var input = document.querySelector('#pl-body .wb-input[data-key="' + CSS.escape(f.key || '') + '"], #pl-body .wb-select[data-key="' + CSS.escape(f.key || '') + '"]');
+    if (input) body[f.key] = fieldInputValue(f, input);
+  });
+  if (!Object.keys(body).length) return;
+
+  var btn = document.getElementById('pl-save');
+  btn.classList.add('is-loading');
+  var msgEl = document.getElementById('pl-msg');
+  try {
+    var r = await WB.api.post('/api/martin/policy', body);
+    handlePolicyResult(r);
+    WB.toast('参数已保存并应用', 'success');
+  } catch (e) {
+    // api 对 ok:false 也会抛，带 data 时照样渲染校验信息
+    if (e && e.data) handlePolicyResult(e.data);
+    WB.toast('保存失败：' + (e && e.error || '网络错误'), 'error');
+  } finally {
+    btn.classList.remove('is-loading');
+  }
+}
+
+function handlePolicyResult(r) {
+  var msgEl = document.getElementById('pl-msg');
+  var v = r.validation || {};
+  var out = '';
+
+  var errors = [].concat(v.errors || [], r.rejected || []).filter(Boolean);
+  if (errors.length) {
+    out += '<div class="wb-alert is-danger">⛔ 校验错误：<ul class="msg-list">' +
+      errors.map(function (x) { return '<li>' + esc(typeof x === 'string' ? x : JSON.stringify(x)) + '</li>'; }).join('') +
+      '</ul></div>';
+  }
+  if (Array.isArray(v.warnings) && v.warnings.length) {
+    out += '<div class="wb-alert is-warning" style="margin-top:8px">⚠ 告警：<ul class="msg-list">' +
+      v.warnings.map(function (x) { return '<li>' + esc(typeof x === 'string' ? x : JSON.stringify(x)) + '</li>'; }).join('') +
+      '</ul></div>';
+  }
+  if (Array.isArray(v.clamped) && v.clamped.length) {
+    out += '<div class="wb-alert" style="margin-top:8px">ℹ 以下字段被夹取到边界：' +
+      esc(v.clamped.map(function (c) { return typeof c === 'string' ? c : (c.key || JSON.stringify(c)); }).join('、')) + '</div>';
+  }
+  var notes = [];
+  if (r.note) notes.push(esc(String(r.note)));
+  if (ok(r.occupiedPct)) notes.push('保存后占用 <b class="num">' + esc(fmt.num(num(r.occupiedPct), 1)) + '%</b>');
+  if (notes.length) out += '<div class="wb-alert" style="margin-top:8px">' + notes.join(' · ') + '</div>';
+  msgEl.innerHTML = out;
+
+  // 更新基准值并清 dirty
+  if (r.policy && typeof r.policy === 'object') {
+    plCurrent = Object.assign({}, plCurrent, r.policy);
+  } else {
+    Object.keys(plDirty).forEach(function (k) { /* 保守：不更新 */ });
+  }
+  if (!errors.length) {
+    plFields.forEach(function (f) {
+      var input = document.querySelector('#pl-body .wb-input[data-key="' + CSS.escape(f.key || '') + '"], #pl-body .wb-select[data-key="' + CSS.escape(f.key || '') + '"]');
+      if (input && plCurrent[f.key] !== undefined) input.value = String(plCurrent[f.key]);
+    });
+    plDirty = {};
+    recalcPolicy();
+    // 同步满层占用徽标
+    if (r.validation && r.validation.meta && ok(r.validation.meta.fullOccupancyPct)) {
+      S.policy.meta = Object.assign({}, S.policy.meta, r.validation.meta);
+    }
+  }
+}
+
+/** 分组锚点高亮（scroll spy） */
+function policyScrollSpy() {
+  if (activeSection !== 'policy') return;
+  var cards = document.querySelectorAll('#pl-body .pg-card');
+  if (!cards.length) return;
+  var cur = null;
+  cards.forEach(function (c) { if (c.getBoundingClientRect().top <= 120) cur = c.id; });
+  if (!cur) cur = cards[0].id;
+  document.querySelectorAll('#pl-body .policy-nav a').forEach(function (a) {
+    a.classList.toggle('is-active', a.getAttribute('data-g') === cur);
+  });
+}
+
+/* ==================== 路由 / 区块调度 ==================== */
+
+var SECTIONS = {
+  overview: {
+    enter: function () {
+      if (S.state) renderOverview(S.state);
+      if (!S.baskets) loadBaskets(); // 资金效率依赖 baskets.totals
+      loadBacktest();
+      onHealthCheck();
+    },
+    reload: function () { loadBacktest(); onHealthCheck(); },
+  },
+  baskets: {
+    enter: function () { sectionPollers.baskets = WB.poll(loadBaskets, 5000); },
+    reload: loadBaskets,
+  },
+  candidates: {
+    enter: function () { sectionPollers.candidates = WB.poll(loadCandidates, 10000); },
+    reload: loadCandidates,
+  },
+  pnl: {
+    enter: function () { renderPnl(); if (!S.baskets) loadBaskets(); },
+    reload: function () { loadBaskets(); renderPnl(); },
+  },
+  verify: { enter: loadVerify, reload: loadVerify },
+  report: { enter: loadReports, reload: loadReports },
+  log: {
+    enter: function () { renderLogs(S.state); },
+    reload: function () { renderLogs(S.state); },
+  },
+  policy: { enter: loadPolicy, reload: loadPolicy },
+};
+
+function routeKey() {
+  var h = (location.hash || '').replace(/^#\/?/, '');
+  return SECTIONS[h] ? h : 'overview';
+}
+
+function activate(key) {
+  if (!SECTIONS[key]) key = 'overview';
+  activeSection = key;
+
+  // 区块 display 切换
+  document.querySelectorAll('.page-section').forEach(function (sec) {
+    sec.classList.toggle('is-active', sec.getAttribute('data-key') === key);
+  });
+  // 侧栏高亮
+  document.querySelectorAll('.wb-nav-item').forEach(function (a) {
+    a.classList.toggle('is-active', a.getAttribute('data-key') === key);
+  });
+  // 停掉上一个区块的轮询
+  Object.keys(sectionPollers).forEach(function (k) {
+    sectionPollers[k]();
+    delete sectionPollers[k];
+  });
+
+  var sec = SECTIONS[key];
+  if (sec && sec.enter) sec.enter();
+
+  // 切区块时回到顶部
+  window.scrollTo({ top: 0 });
+}
+
+/* ==================== 事件绑定 + 启动 ==================== */
+
+function bindStaticEvents() {
+  // 概览
+  document.getElementById('ov-health-btn').addEventListener('click', onHealthCheck);
+  document.getElementById('bt-refresh').addEventListener('click', loadBacktest);
+  document.getElementById('bt-run').addEventListener('click', function () { onRunBacktest(this); });
+  document.getElementById('eff-info-btn').addEventListener('click', function () {
+    var d = document.getElementById('eff-info');
+    d.hidden = !d.hidden;
+  });
+  // 候选池
+  document.getElementById('cd-screen-btn').addEventListener('click', function () { onScreenNow(this); });
+  // 验算 / 报告
+  document.getElementById('vf-refresh').addEventListener('click', loadVerify);
+  document.getElementById('rp-refresh').addEventListener('click', loadReports);
+
+  // 动态按钮：事件委托
+  document.getElementById('page').addEventListener('click', function (e) {
+    var t = e.target.closest('button, .rep-item');
+    if (!t) return;
+    if (t.id === 'ov-breaker-clear') { onBreakerClear(); return; }
+    if (t.classList.contains('cd-open')) { onOpenPreview(Number(t.getAttribute('data-idx')), t); return; }
+    if (t.classList.contains('cd-detail')) { toggleCandidateDetail(Number(t.getAttribute('data-idx')), t); return; }
+    if (t.classList.contains('pl-preset')) { applyPreset(t.getAttribute('data-preset')); return; }
+    if (t.classList.contains('rep-item')) { openReport(t.getAttribute('data-path'), t); return; }
+  });
+  // 报告列表键盘可达
+  document.getElementById('rp-list').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var t = e.target.closest('.rep-item');
+    if (t) { e.preventDefault(); openReport(t.getAttribute('data-path'), t); }
+  });
+
+  window.addEventListener('scroll', policyScrollSpy, { passive: true });
+  window.addEventListener('hashchange', function () { activate(routeKey()); });
+}
+
+function boot() {
+  WB.shell.init(routeKey(), { onPause: onPause, onRefresh: onRefresh, onSystem: onSystem });
+  bindStaticEvents();
+  activate(routeKey());
+  // 全局 5s 轮询 state（顶栏生命体征 + 概览/日志/收益联动）
+  WB.poll(loadState, 5000);
+  // 后台预取 policy-schema：资金效率的「满层占用上限 / 单层名义预算」依赖它
+  WB.api.get('/api/martin/policy-schema').then(function (d) {
+    S.policy = d;
+    if (activeSection === 'overview') renderEfficiencyInto('ov-eff');
+    if (activeSection === 'pnl') renderEfficiencyInto('pnl-eff');
+  }).catch(function () { /* 缺则资金效率对应位显示 "--" */ });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+
+})();
+</script>
+  <script src="vendor/uplot.min.js"></script>
+  <script src="charts.js"></script>
+  <script src="charts2.js"></script>
+</body>
+</html>
